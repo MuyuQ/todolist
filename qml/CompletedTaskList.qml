@@ -1,50 +1,41 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import Qt5Compat.GraphicalEffects
+import QtQuick.Controls.Material 2.15
 
-Rectangle {
+Pane {
     id: root
-    color: "#f8f8f8"
-    radius: 12
-    border.color: "transparent"
-    border.width: 0
     
-    // 现代化的阴影效果
-    layer.enabled: true
-    layer.effect: DropShadow {
-        transparentBorder: true
-        horizontalOffset: 0
-        verticalOffset: 4
-        radius: 12.0
-        samples: 17
-        color: "#30000000"
-    }
+    // Material设计风格
+    Material.elevation: 1
+    Material.background: "white"
+    padding: 0
     
     // 已完成任务模型
     property var completedTasksModel: ListModel { id: completedTasksModel }
     
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 10
+        spacing: 0
         
-        // 标题区域 - WinUI3风格
-        Rectangle {
+        // 标题区域
+        Pane {
             Layout.fillWidth: true
-            height: 48
-            color: "transparent"
+            height: 56
+            padding: 0
+            Material.elevation: 0
+            Material.background: Material.primary
             
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
                 
                 Label {
                     text: "已完成任务"
-                    font.pixelSize: 18
+                    font.pixelSize: 16
                     font.weight: Font.Medium
-                    color: "#0078d4" // WinUI3主题色
+                    color: "white"
                 }
                 
                 Item { Layout.fillWidth: true }
@@ -52,51 +43,77 @@ Rectangle {
                 Label {
                     text: completedTasksList.count + " 个任务"
                     font.pixelSize: 14
-                    color: "#666666"
+                    color: "white"
+                    opacity: 0.8
                 }
             }
         }
         
-        // 分隔线
-        Rectangle {
-            Layout.fillWidth: true
-            height: 1
-            color: "#e0e0e0"
-        }
-        
-        // 已完成任务列表
+        // 任务列表
         ListView {
             id: completedTasksList
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 8
             clip: true
-            
+            spacing: 1
             model: completedTasksModel
+            
+            // 连接到任务控制器
+            Component.onCompleted: {
+                updateCompletedTasks()
+            }
+            
+            Connections {
+                target: taskController
+                function onTaskUpdated() {
+                    updateCompletedTasks()
+                }
+            }
+            
+            // 更新已完成任务列表
+            function updateCompletedTasks() {
+                completedTasksModel.clear()
+                var tasks = taskController.getCompletedTasks()
+                if (tasks && tasks.length > 0) {
+                    for (var i = 0; i < tasks.length; i++) {
+                        completedTasksModel.append(tasks[i])
+                    }
+                }
+            }
             
             // 无任务时的提示
             Component {
                 id: emptyState
                 Item {
                     width: completedTasksList.width
-                    height: 100
+                    height: 200
                     
                     Column {
                         anchors.centerIn: parent
-                        spacing: 8
+                        spacing: 16
                         
-                        Text {
+                        Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: "✓"
-                            font.pixelSize: 32
-                            color: "#0078d4"
+                            width: 64
+                            height: 64
+                            radius: 32
+                            color: Material.accent
+                            opacity: 0.1
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                font.pixelSize: 32
+                                color: Material.accent
+                            }
                         }
                         
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "暂无已完成任务"
-                            font.pixelSize: 14
-                            color: "#666666"
+                            font.pixelSize: 16
+                            color: Material.foreground
+                            opacity: 0.6
                         }
                     }
                 }
@@ -112,79 +129,65 @@ Rectangle {
             }
             
             // 显示空状态
-            Component.onCompleted: {
+            function updateEmptyState() {
                 if (count === 0) {
                     footerItem = emptyStateDelegate.createObject(completedTasksList)
                 }
             }
             
             // 任务项代理
-            delegate: Rectangle {
+            delegate: ItemDelegate {
                 width: completedTasksList.width
-                height: 60
-                radius: 4
-                color: "white"
-                border.color: "#e6e6e6"
-                border.width: 1
+                height: 72
                 
-                // 微妙的悬停效果
-                states: State {
-                    name: "hovered"
-                    when: mouseArea.containsMouse
-                    PropertyChanges { target: parent; color: "#f9f9f9" }
-                }
+                // 悬停效果
+                highlighted: hovered
                 
-                MouseArea {
-                    id: mouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    
-                    // 点击恢复任务
-                    onClicked: {
-                        taskController.setTaskCompleted(model.id, false)
-                    }
+                // 点击恢复任务
+                onClicked: {
+                    taskController.setTaskCompleted(model.id, false)
                 }
                 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 10
+                    anchors.margins: 16
+                    spacing: 16
                     
                     // 完成标记
                     Rectangle {
                         width: 24
                         height: 24
                         radius: 12
-                        color: "#e6f7ff"
-                        border.color: "#0078d4"
-                        border.width: 1
+                        color: Material.accent
+                        opacity: 0.1
                         
                         Text {
                             anchors.centerIn: parent
                             text: "✓"
                             font.pixelSize: 14
-                            color: "#0078d4"
+                            color: Material.accent
                         }
                     }
                     
                     // 任务信息
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 2
+                        spacing: 4
                         
                         Label {
                             text: model.title
-                            font.pixelSize: 14
+                            font.pixelSize: 16
                             font.weight: Font.Medium
-                            color: "#333333"
+                            color: Material.foreground
                             Layout.fillWidth: true
                             elide: Text.ElideRight
                         }
                         
                         Label {
                             text: model.description || ""
-                            font.pixelSize: 12
-                            color: "#666666"
+                            font.pixelSize: 14
+                            color: Material.foreground
+                            opacity: 0.6
                             Layout.fillWidth: true
                             elide: Text.ElideRight
                             visible: model.description && model.description.length > 0
@@ -193,87 +196,25 @@ Rectangle {
                     
                     // 象限标记
                     Rectangle {
-                        width: 24
-                        height: 24
-                        radius: 4
+                        width: 16
+                        height: 16
+                        radius: 8
                         color: getQuadrantColor(model.quadrant)
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: model.quadrant
-                            font.pixelSize: 12
-                            color: Qt.darker(getQuadrantColor(model.quadrant), 2.0)
-                        }
-                        
-                        // 获取象限颜色
-                        function getQuadrantColor(quadrant) {
-                            switch(quadrant) {
-                                case 1: return "#ffcdd2"; // 重要且紧急 - 浅红色
-                                case 2: return "#c8e6c9"; // 重要不紧急 - 浅绿色
-                                case 3: return "#bbdefb"; // 不重要但紧急 - 浅蓝色
-                                case 4: return "#e1bee7"; // 不重要不紧急 - 浅紫色
-                                default: return "#e0e0e0";
-                            }
-                        }
+                        opacity: 0.7
                     }
                 }
-            }
-            
-            ScrollBar.vertical: ScrollBar {
-                active: true
-                policy: ScrollBar.AsNeeded
                 
-                // WinUI3风格滚动条
-                contentItem: Rectangle {
-                    implicitWidth: 6
-                    implicitHeight: 100
-                    radius: 3
-                    color: parent.pressed ? "#666666" : "#999999"
-                    opacity: parent.active ? 0.8 : 0.5
+                // 分隔线
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Material.dividerColor
+                    anchors.bottom: parent.bottom
                 }
             }
-        }
-    }
-    
-    // 加载已完成任务
-    function loadCompletedTasks() {
-        completedTasksModel.clear()
-        var tasks = taskController.getCompletedTasks()
-        
-        if (tasks && tasks.length > 0) {
-            for (var i = 0; i < tasks.length; i++) {
-                var task = tasks[i]
-                completedTasksModel.append({
-                    "id": task.id,
-                    "title": task.title,
-                    "description": task.description,
-                    "quadrant": task.quadrant
-                })
-            }
             
-            // 移除空状态
-            if (completedTasksList.footerItem) {
-                completedTasksList.footerItem.destroy()
-                completedTasksList.footerItem = null
-            }
-        } else {
-            // 显示空状态
-            if (!completedTasksList.footerItem) {
-                completedTasksList.footerItem = emptyStateDelegate.createObject(completedTasksList)
-            }
+            // 滚动条
+            ScrollIndicator.vertical: ScrollIndicator {}
         }
-    }
-    
-    // 监听任务更新
-    Connections {
-        target: taskController
-        function onTaskUpdated() {
-            loadCompletedTasks()
-        }
-    }
-    
-    // 初始化
-    Component.onCompleted: {
-        loadCompletedTasks()
     }
 }

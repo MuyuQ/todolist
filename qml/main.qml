@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
-import Qt5Compat.GraphicalEffects
+import QtQuick.Controls.Material 2.15
 
 ApplicationWindow {
     id: root
@@ -10,223 +10,162 @@ ApplicationWindow {
     width: 1200
     height: 800
     title: qsTr("时光四象限")
-    color: "#fafafa" // 更柔和的背景色
+    color: "#fafafa"
     
-    // 字体设置 - 使用系统字体
-    // 字体对象
+    // Material主题设置
+    Material.theme: Material.Light
+    Material.accent: Material.Blue
+    Material.primary: Material.Indigo
+    
+    // 常量定义
+    QtObject {
+        id: constants
+        property var quadrantColors: ["#ef5350", "#66bb6a", "#42a5f5", "#ab47bc"]
+        property var quadrantTitles: ["重要且紧急", "重要不紧急", "不重要但紧急", "不重要不紧急"]
+        property color primaryColor: Material.primary
+        property color secondaryColor: Material.accent
+    }
+    
+    // 字体
     FontLoader {
         id: elegantFont
-        source: "Microsoft YaHei UI"
+        source: "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
     }
     
-    // 定义颜色 - 更柔和的色调
-    readonly property color quadrant1Color: "#ffccd5" // 重要且紧急 - 柔和玫瑰色
-    readonly property color quadrant2Color: "#c9e7cb" // 重要不紧急 - 柔和薄荷色
-    readonly property color quadrant3Color: "#cce5ff" // 不重要但紧急 - 柔和天空蓝
-    readonly property color quadrant4Color: "#e6d8f0" // 不重要不紧急 - 柔和薰衣草色
-    
-    // 获取象限颜色
+    // 获取象限颜色函数
     function getQuadrantColor(quadrant) {
-        switch(quadrant) {
-            case 1: return quadrant1Color;
-            case 2: return quadrant2Color;
-            case 3: return quadrant3Color;
-            case 4: return quadrant4Color;
-            default: return "#e0e0e0";
-        }
+        return quadrant >= 1 && quadrant <= 4 ? constants.quadrantColors[quadrant - 1] : "#e0e0e0";
     }
     
-    // 获取象限标题
+    // 获取象限标题函数
     function getQuadrantTitle(quadrant) {
-        switch(quadrant) {
-            case 1: return "重要且紧急";
-            case 2: return "重要不紧急";
-            case 3: return "不重要但紧急";
-            case 4: return "不重要不紧急";
-            default: return "未分类";
-        }
+        return quadrant >= 1 && quadrant <= 4 ? constants.quadrantTitles[quadrant - 1] : "未分类";
     }
     
-    // 顶部工具栏 - WinUI3风格
+    // 顶部应用栏
     header: ToolBar {
-        height: 60
-        background: Rectangle {
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#6a11cb" }
-                GradientStop { position: 1.0; color: "#2575fc" }
-            }
-        }
-        
-        // 工具栏阴影
-        layer.enabled: true
-        layer.effect: DropShadow {
-            transparentBorder: true
-            horizontalOffset: 0
-            verticalOffset: 3
-            radius: 8.0
-            samples: 17
-            color: "#40000000"
-        }
+        id: mainToolbar
+        height: 64
+        Material.elevation: 4
         
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
             
             Label {
                 text: qsTr("时光四象限")
-                font.family: elegantFont.name
-                font.pixelSize: 24
-                font.weight: Font.Light
+                font.pixelSize: 22
+                font.weight: Font.Medium
                 color: "white"
-                
-                // 添加微妙的文字阴影
-                layer.enabled: true
-                layer.effect: DropShadow {
-                    horizontalOffset: 1
-                    verticalOffset: 1
-                    radius: 3.0
-                    samples: 17
-                    color: "#80000000"
-                }
             }
             
             Item { Layout.fillWidth: true }
             
+            TabBar {
+                id: viewTabBar
+                Material.background: "transparent"
+                Material.foreground: "white"
+                
+                TabButton {
+                    id: activeTasks
+                    text: qsTr("活动任务")
+                    font.pixelSize: 14
+                    width: implicitWidth + 20
+                    onClicked: mainStackView.replace(activeTasksPage)
+                }
+                
+                TabButton {
+                    id: completedTasks
+                    text: qsTr("已完成任务")
+                    font.pixelSize: 14
+                    width: implicitWidth + 20
+                    onClicked: mainStackView.replace(completedTasksPage)
+                }
+            }
+            
             Button {
                 text: qsTr("添加任务")
+                highlighted: true
+                Material.elevation: 1
                 onClicked: addTaskDialog.open()
-                background: Rectangle {
-                    color: "#ffffff"
-                    radius: 20
-                    opacity: parent.hovered ? 0.95 : 0.9
+                
+                contentItem: RowLayout {
+                    spacing: 8
                     
-                    // 微妙的悬停动画
-                    Behavior on opacity {
-                        NumberAnimation { duration: 150 }
+                    Text {
+                        text: "＋"
+                        font.pixelSize: 16
+                        color: "white"
+                    }
+                    
+                    Text {
+                        text: qsTr("添加任务")
+                        font.pixelSize: 14
+                        color: "white"
                     }
                 }
-                contentItem: Text {
-                    text: parent.text
-                    font.family: elegantFont.name
-                    font.pixelSize: 14
-                    font.weight: Font.Medium
-                    color: "#6a11cb"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                padding: 12
-                // 添加点击动画
-                scale: pressed ? 0.95 : 1.0
-                Behavior on scale { NumberAnimation { duration: 100 } }
             }
         }
     }
     
-    // 主内容区域 - WinUI3风格
-    ColumnLayout {
+    // 主内容区域
+    StackView {
+        id: mainStackView
         anchors.fill: parent
         anchors.margins: 16
-        spacing: 16
+        initialItem: activeTasksPage
         
-        // 标签页 - 现代化风格
-        TabBar {
-            id: tabBar
-            Layout.fillWidth: true
-            height: 52
-            position: TabBar.Header
-            background: Rectangle {
-                color: "transparent"
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    anchors.bottom: parent.bottom
-                    color: "#e0e0e0"
-                }
-            }
-            
-            // 活动任务标签
-            TabButton {
-                text: "活动任务"
-                font.family: elegantFont.name
-                font.pixelSize: 16
-                font.weight: Font.Medium
-                height: parent.height
-                width: implicitWidth + 40
-                
-                contentItem: Text {
-                    text: parent.text
-                    font: parent.font
-                    color: parent.checked ? "#6a11cb" : "#777777"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-                
-                background: Rectangle {
-                    color: "transparent"
-                    Rectangle {
-                        width: parent.width
-                        height: 3
-                        anchors.bottom: parent.bottom
-                        color: parent.parent.checked ? "#6a11cb" : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
-                }
-            }
-            
-            // 已完成任务标签
-            TabButton {
-                text: "已完成任务"
-                font.family: elegantFont.name
-                font.pixelSize: 16
-                font.weight: Font.Medium
-                height: parent.height
-                width: implicitWidth + 40
-                
-                contentItem: Text {
-                    text: parent.text
-                    font: parent.font
-                    color: parent.checked ? "#6a11cb" : "#777777"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-                
-                background: Rectangle {
-                    color: "transparent"
-                    Rectangle {
-                        width: parent.width
-                        height: 3
-                        anchors.bottom: parent.bottom
-                        color: parent.parent.checked ? "#6a11cb" : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
-                }
+        // 过渡动画设置
+        pushEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 200
+                easing.type: Easing.OutCubic
             }
         }
+        pushExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: 200
+                easing.type: Easing.InCubic
+            }
+        }
+    }
+    
+    // 活动任务页面组件
+    Component {
+        id: activeTasksPage
         
-        // 标签页内容
-        StackLayout {
-            currentIndex: tabBar.currentIndex
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        Pane {
+            Material.elevation: 0
+            Material.background: "transparent"
             
-            // 活动任务页面
-            RowLayout {
+            ColumnLayout {
+                anchors.fill: parent
                 spacing: 16
                 
-                // 四象限网格
+                // 页面标题
+                Label {
+                    text: qsTr("四象限任务管理")
+                    font.pixelSize: 24
+                    font.weight: Font.Medium
+                    color: Material.foreground
+                }
+                
+                // 四象限区域
                 GridLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredWidth: parent.width * 0.7
                     columns: 2
                     rows: 2
                     columnSpacing: 16
                     rowSpacing: 16
                     
-                    // 四个象限
                     Repeater {
                         model: 4
                         
@@ -236,22 +175,44 @@ ApplicationWindow {
                             quadrantNumber: index + 1
                             quadrantTitle: getQuadrantTitle(index + 1)
                             quadrantColor: getQuadrantColor(index + 1)
+                            
+                            // 添加出现动画
+                            NumberAnimation on opacity {
+                                from: 0
+                                to: 1
+                                duration: 300 + index * 100
+                                easing.type: Easing.OutCubic
+                                running: true
+                            }
+                            
+                            NumberAnimation on scale {
+                                from: 0.95
+                                to: 1.0
+                                duration: 300 + index * 100
+                                easing.type: Easing.OutCubic
+                                running: true
+                            }
                         }
                     }
                 }
-                
-                // 任务列表
-                TaskList {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.preferredWidth: parent.width * 0.3
-                }
             }
+        }
+    }
+    
+    // 已完成任务页面组件
+    Component {
+        id: completedTasksPage
+        
+        CompletedTaskList {
+            anchors.fill: parent
             
-            // 已完成任务页面
-            CompletedTaskList {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            // 添加出现动画
+            NumberAnimation on opacity {
+                from: 0
+                to: 1
+                duration: 300
+                easing.type: Easing.OutCubic
+                running: true
             }
         }
     }
