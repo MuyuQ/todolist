@@ -94,82 +94,86 @@ Rectangle {
         var quadrantPanel = parent.parent // 获取到当前象限面板
         var quadrantNumber = taskQuadrant // 当前象限编号
         
-        // 获取主应用窗口中的四象限布局
-        var mainWindow = parent.parent.parent.parent // 获取到包含所有象限的主容器
-        var parentWidth = mainWindow.width
-        var parentHeight = mainWindow.height
-        var centerX = parentWidth / 2
-        var centerY = parentHeight / 2
-        
         // 计算拖动距离 - 使用原始位置和当前位置计算实际移动距离
         var movedDistance = Math.sqrt(Math.pow(taskDelegate.x - originalX, 2) + Math.pow(taskDelegate.y - originalY, 2))
         console.log("拖动距离: " + movedDistance)
         
         // 如果拖动距离不够大，保持在当前象限
-        // 增加阈值以减少误触发
-        if (movedDistance < 100) {
+        // 增加阈值以减少误触发 - 设置更高的阈值
+        if (movedDistance < 200) { // 增加阈值，减少误触发
             console.log("拖动距离不足，保持在当前象限: " + quadrantNumber)
             return quadrantNumber
         }
         
-        // 获取任务项在主窗口中的绝对位置（使用任务项的中心点）
-        // 注意：这里使用taskDelegate的绝对位置，而不是相对于父容器的位置
-        var taskCenterX = taskDelegate.x + (taskDelegate.width / 2)
-        var taskCenterY = taskDelegate.y + (taskDelegate.height / 2)
-        var mainWindowCoords = taskDelegate.mapToItem(mainWindow, taskCenterX, taskCenterY)
+        // 获取主应用窗口中的四象限布局
+        var mainWindow = parent.parent.parent.parent // 获取到包含所有象限的主容器
         
-        // 使用映射后的坐标
-        taskCenterX = mainWindowCoords.x
-        taskCenterY = mainWindowCoords.y
+        // 获取当前象限面板在主窗口中的位置和尺寸
+        var quadrantPos = quadrantPanel.mapToItem(mainWindow, 0, 0)
+        var quadrantWidth = quadrantPanel.width
+        var quadrantHeight = quadrantPanel.height
+        
+        // 获取任务项在主窗口中的绝对位置（使用任务项的中心点）
+        var taskGlobalPos = taskDelegate.mapToItem(mainWindow, taskDelegate.width/2, taskDelegate.height/2)
+        var taskGlobalX = taskGlobalPos.x
+        var taskGlobalY = taskGlobalPos.y
+        
+        // 获取主窗口的中心点
+        var centerX = mainWindow.width / 2
+        var centerY = mainWindow.height / 2
         
         console.log("计算象限 - 当前象限: " + quadrantNumber)
-        console.log("计算象限 - 容器尺寸: (" + parentWidth + "x" + parentHeight + ")")
+        console.log("计算象限 - 主窗口尺寸: (" + mainWindow.width + "x" + mainWindow.height + ")")
         console.log("计算象限 - 中心点: (" + centerX + ", " + centerY + ")")
-        console.log("计算象限 - 任务中心位置: (" + taskCenterX + ", " + taskCenterY + ")")
+        console.log("计算象限 - 任务全局位置: (" + taskGlobalX + ", " + taskGlobalY + ")")
+        console.log("计算象限 - 当前象限位置: (" + quadrantPos.x + ", " + quadrantPos.y + ")")
+        console.log("计算象限 - 当前象限尺寸: (" + quadrantWidth + "x" + quadrantHeight + ")")
         
-        // 计算当前象限的边界
-        var currentQuadrantBounds = {
-            minX: quadrantNumber === 1 || quadrantNumber === 3 ? 0 : centerX,
-            maxX: quadrantNumber === 1 || quadrantNumber === 3 ? centerX : parentWidth,
-            minY: quadrantNumber === 1 || quadrantNumber === 2 ? 0 : centerY,
-            maxY: quadrantNumber === 1 || quadrantNumber === 2 ? centerY : parentHeight
-        }
+        // 检查任务是否仍在当前象限面板的边界内（添加更大的边距）
+        var margin = 40 // 增加边距，防止在边界附近误判
+        var isInCurrentQuadrant = 
+            taskGlobalX >= quadrantPos.x + margin && 
+            taskGlobalX <= quadrantPos.x + quadrantWidth - margin && 
+            taskGlobalY >= quadrantPos.y + margin && 
+            taskGlobalY <= quadrantPos.y + quadrantHeight - margin
         
-        // 检查是否明显跨越了象限边界
-        var crossedBoundaryX = (taskCenterX < centerX && (quadrantNumber === 2 || quadrantNumber === 4)) ||
-                              (taskCenterX > centerX && (quadrantNumber === 1 || quadrantNumber === 3))
-        var crossedBoundaryY = (taskCenterY < centerY && (quadrantNumber === 3 || quadrantNumber === 4)) ||
-                              (taskCenterY > centerY && (quadrantNumber === 1 || quadrantNumber === 2))
-        
-        // 必须明显跨越边界才改变象限
-        var boundaryThreshold = 30 // 增加跨越边界的最小距离，减少误触发
-        if (!crossedBoundaryX && !crossedBoundaryY) {
-            console.log("未跨越象限边界，保持在当前象限: " + quadrantNumber)
+        if (isInCurrentQuadrant) {
+            console.log("任务仍在当前象限面板内，保持在当前象限: " + quadrantNumber)
             return quadrantNumber
         }
         
-        if (crossedBoundaryX) {
-            var distanceFromBoundaryX = Math.abs(taskCenterX - centerX)
-            if (distanceFromBoundaryX < boundaryThreshold) {
-                console.log("水平方向未明显跨越边界，保持在当前象限: " + quadrantNumber)
-                return quadrantNumber
-            }
+        // 计算任务项中心点到当前象限中心的距离
+        var quadrantCenterX = quadrantPos.x + quadrantWidth / 2
+        var quadrantCenterY = quadrantPos.y + quadrantHeight / 2
+        var distanceToQuadrantCenter = Math.sqrt(
+            Math.pow(taskGlobalX - quadrantCenterX, 2) + 
+            Math.pow(taskGlobalY - quadrantCenterY, 2)
+        )
+        
+        // 如果距离当前象限中心不够远，保持在当前象限
+        var minDistanceToChangeQuadrant = Math.min(quadrantWidth, quadrantHeight) * 0.4
+        if (distanceToQuadrantCenter < minDistanceToChangeQuadrant) {
+            console.log("距离当前象限中心不够远，保持在当前象限: " + quadrantNumber)
+            return quadrantNumber
         }
         
-        if (crossedBoundaryY) {
-            var distanceFromBoundaryY = Math.abs(taskCenterY - centerY)
-            if (distanceFromBoundaryY < boundaryThreshold) {
-                console.log("垂直方向未明显跨越边界，保持在当前象限: " + quadrantNumber)
-                return quadrantNumber
-            }
-        }
-        
-        // 根据任务项中心点位置判断新象限
+        // 确定新象限 - 使用主窗口中心线判断
         var newQuadrant = 0
-        if (taskCenterX < centerX) {
-            newQuadrant = taskCenterY < centerY ? 1 : 3
+        
+        // 添加边界缓冲区，避免在中心线附近频繁切换象限
+        var bufferZone = 50 // 增加边界缓冲区大小
+        
+        // 根据任务项在主窗口中的位置判断新象限
+        if (Math.abs(taskGlobalX - centerX) < bufferZone || Math.abs(taskGlobalY - centerY) < bufferZone) {
+            // 在中心缓冲区内，保持当前象限
+            console.log("任务在中心缓冲区内，保持在当前象限: " + quadrantNumber)
+            return quadrantNumber
+        }
+        
+        if (taskGlobalX < centerX) {
+            newQuadrant = taskGlobalY < centerY ? 1 : 3
         } else {
-            newQuadrant = taskCenterY < centerY ? 2 : 4
+            newQuadrant = taskGlobalY < centerY ? 2 : 4
         }
         
         // 确保计算的新象限与当前象限不同
@@ -305,11 +309,22 @@ Rectangle {
             var gridX = Math.round(taskDelegate.x / gridSize) * gridSize
             var gridY = Math.round(taskDelegate.y / gridSize) * gridSize
             
-            // 如果移动距离太小，恢复到原始位置
+            // 计算移动距离
             var movedDistance = Math.sqrt(Math.pow(taskDelegate.x - originalX, 2) + Math.pow(taskDelegate.y - originalY, 2))
-            if (movedDistance < 10) {
+            console.log("移动距离: " + movedDistance)
+            
+            // 如果移动距离太小，恢复到原始位置并且不检查象限变化
+            if (movedDistance < 50) { // 增加阈值，减少误触发
+                console.log("移动距离太小，恢复到原始位置")
                 gridX = originalX
                 gridY = originalY
+                alignAnimation.targetX = gridX
+                alignAnimation.targetY = gridY
+                alignAnimation.start()
+                
+                // 发送拖拽完成信号，更新排序
+                dragFinished()
+                return // 不检查象限变化
             }
             
             // 启动平滑对齐动画
@@ -326,9 +341,42 @@ Rectangle {
             
             // 确保计算的象限有效且与当前象限不同
             if (newQuadrant > 0 && newQuadrant <= 4 && newQuadrant !== taskQuadrant) {
-                console.log("移动任务到新象限: " + newQuadrant)
-                taskController.moveTaskToQuadrant(taskId, newQuadrant)
-                return // 已经处理了象限变化，不需要再发送dragFinished信号
+                // 额外检查：确保移动距离足够大才触发象限变更
+                if (movedDistance > 200) { // 设置更高的阈值用于象限变更
+                    // 获取当前象限面板和目标象限面板
+                    var currentQuadrantPanel = parent.parent
+                    var mainWindow = parent.parent.parent.parent
+                    
+                    // 计算任务项中心点到当前象限边界的最小距离
+                    var currentQuadrantPos = currentQuadrantPanel.mapToItem(mainWindow, 0, 0)
+                    var currentQuadrantWidth = currentQuadrantPanel.width
+                    var currentQuadrantHeight = currentQuadrantPanel.height
+                    
+                    // 任务项在主窗口中的绝对位置
+                    var taskGlobalPos = taskDelegate.mapToItem(mainWindow, taskDelegate.width/2, taskDelegate.height/2)
+                    var taskGlobalX = taskGlobalPos.x
+                    var taskGlobalY = taskGlobalPos.y
+                    
+                    // 计算到边界的距离
+                    var distanceToLeftBorder = Math.abs(taskGlobalX - currentQuadrantPos.x)
+                    var distanceToRightBorder = Math.abs(taskGlobalX - (currentQuadrantPos.x + currentQuadrantWidth))
+                    var distanceToTopBorder = Math.abs(taskGlobalY - currentQuadrantPos.y)
+                    var distanceToBottomBorder = Math.abs(taskGlobalY - (currentQuadrantPos.y + currentQuadrantHeight))
+                    
+                    // 到边界的最小距离
+                    var minDistanceToBorder = Math.min(distanceToLeftBorder, distanceToRightBorder, distanceToTopBorder, distanceToBottomBorder)
+                    
+                    // 只有当任务项明显超出当前象限边界时才允许变更象限
+                    if (minDistanceToBorder > 50) { // 设置边界阈值
+                        console.log("移动任务到新象限: " + newQuadrant + ", 边界距离: " + minDistanceToBorder)
+                        taskController.moveTaskToQuadrant(taskId, newQuadrant)
+                        return // 已经处理了象限变化，不需要再发送dragFinished信号
+                    } else {
+                        console.log("虽然移动距离足够，但未明显超出象限边界，保持在当前象限: " + taskQuadrant)
+                    }
+                } else {
+                    console.log("移动距离不足以触发象限变更，保持在当前象限: " + taskQuadrant)
+                }
             } else {
                 console.log("保持在当前象限: " + taskQuadrant)
             }
