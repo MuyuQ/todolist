@@ -23,22 +23,23 @@ Item {
     function updateTasks() {
         taskListModel.clear()
         var tasks = taskController.getTasksForQuadrant(quadrantNumber)
-        if (tasks && tasks.length > 0) {
-            // 按照order_index排序
-            tasks.sort(function(a, b) {
-                return a.order_index - b.order_index // 升序排列，按照order_index
+        if (!tasks || tasks.length === 0) return
+        
+        // 优化版 - 只在必要时排序
+        if (tasks.some(task => task.order_index !== undefined)) {
+            tasks.sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+        }
+        
+        // 优化版 - 减少循环中的条件判断
+        for (var i = 0; i < tasks.length; i++) {
+            var task = tasks[i]
+            taskListModel.append({
+                "id": task.id,
+                "title": task.title,
+                "description": task.description || "",
+                "quadrant": task.quadrant,
+                "order_index": task.order_index || i
             })
-            
-            for (var i = 0; i < tasks.length; i++) {
-                var task = tasks[i]
-                taskListModel.append({
-                    "id": task.id,
-                    "title": task.title,
-                    "description": task.description,
-                    "quadrant": task.quadrant,
-                    "order_index": task.order_index || i // 使用order_index或默认索引
-                })
-            }
         }
     }
 }

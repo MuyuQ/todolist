@@ -74,10 +74,20 @@ Pane {
             function updateCompletedTasks() {
                 completedTasksModel.clear()
                 var tasks = taskController.getCompletedTasks()
-                if (tasks && tasks.length > 0) {
-                    for (var i = 0; i < tasks.length; i++) {
-                        completedTasksModel.append(tasks[i])
+                if (!tasks || tasks.length === 0) {
+                    if (!footerItem) {
+                        footerItem = emptyStateDelegate.createObject(completedTasksList)
                     }
+                    return
+                }
+                
+                if (footerItem) {
+                    footerItem.destroy()
+                    footerItem = null
+                }
+                
+                for (var i = 0; i < tasks.length; i++) {
+                    completedTasksModel.append(tasks[i])
                 }
             }
             

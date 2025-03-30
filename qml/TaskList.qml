@@ -7,17 +7,15 @@ Rectangle {
     id: root
     color: "white"
     radius: 8
-    border.color: "#e0e0e0"
-    border.width: 1
     
-    // WinUI3风格阴影效果
+    // 阴影效果 - 优化版
     layer.enabled: true
     layer.effect: DropShadow {
         transparentBorder: true
         horizontalOffset: 0
         verticalOffset: 2
         radius: 8.0
-        samples: 17
+        samples: 12
         color: "#20000000"
     }
     
@@ -26,7 +24,6 @@ Rectangle {
         anchors.margins: 10
         spacing: 8
         
-        // 标题区域
         Rectangle {
             Layout.fillWidth: true
             height: 40
@@ -55,7 +52,6 @@ Rectangle {
             }
         }
         
-        // 任务列表
         ListView {
             id: taskList
             Layout.fillWidth: true
