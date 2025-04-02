@@ -1,22 +1,19 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: root
     color: "white"
     radius: 8
     
-    // 阴影效果 - 优化版
-    layer.enabled: true
-    layer.effect: DropShadow {
-        transparentBorder: true
-        horizontalOffset: 0
-        verticalOffset: 2
-        radius: 8.0
-        samples: 12
-        color: "#20000000"
+    // 使用统一的阴影效果组件
+    ShadowEffect {
+        id: shadowEffect
+        offsetY: 2
+        blurRadius: 8.0
+        shadowColor: "#20000000"
+        Component.onCompleted: applyTo(root)
     }
     
     ColumnLayout {

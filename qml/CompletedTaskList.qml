@@ -71,21 +71,24 @@ Pane {
             }
             
             // 更新已完成任务列表
+            property var footerItem: null
+            
             function updateCompletedTasks() {
                 completedTasksModel.clear()
                 var tasks = taskController.getCompletedTasks()
-                if (!tasks || tasks.length === 0) {
-                    if (!footerItem) {
-                        footerItem = emptyStateDelegate.createObject(completedTasksList)
-                    }
-                    return
-                }
+                var isEmpty = !tasks || tasks.length === 0
                 
-                if (footerItem) {
+                // 只在状态变化时处理空任务列表状态
+                if (isEmpty && !footerItem) {
+                    footerItem = emptyStateDelegate.createObject(completedTasksList)
+                } else if (!isEmpty && footerItem) {
                     footerItem.destroy()
                     footerItem = null
                 }
                 
+                if (isEmpty) return
+                
+                // 添加任务到模型
                 for (var i = 0; i < tasks.length; i++) {
                     completedTasksModel.append(tasks[i])
                 }
@@ -138,12 +141,7 @@ Pane {
                 }
             }
             
-            // 显示空状态
-            function updateEmptyState() {
-                if (count === 0) {
-                    footerItem = emptyStateDelegate.createObject(completedTasksList)
-                }
-            }
+            // 空状态已在updateCompletedTasks中处理
             
             // 任务项代理
             delegate: ItemDelegate {
@@ -209,7 +207,7 @@ Pane {
                         width: 16
                         height: 16
                         radius: 8
-                        color: getQuadrantColor(model.quadrant)
+                        color: utils.getQuadrantColor(model.quadrant)
                         opacity: 0.7
                     }
                 }

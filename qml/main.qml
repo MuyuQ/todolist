@@ -20,27 +20,11 @@ ApplicationWindow {
     // 常量定义
     QtObject {
         id: constants
-        property var quadrantColors: ["#ef5350", "#66bb6a", "#42a5f5", "#ab47bc"]
-        property var quadrantTitles: ["重要且紧急", "重要不紧急", "不重要但紧急", "不重要不紧急"]
         property color primaryColor: Material.primary
         property color secondaryColor: Material.accent
     }
     
-    // 字体
-    FontLoader {
-        id: elegantFont
-        source: "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
-    }
-    
-    // 获取象限颜色函数
-    function getQuadrantColor(quadrant) {
-        return quadrant >= 1 && quadrant <= 4 ? constants.quadrantColors[quadrant - 1] : "#e0e0e0";
-    }
-    
-    // 获取象限标题函数
-    function getQuadrantTitle(quadrant) {
-        return quadrant >= 1 && quadrant <= 4 ? constants.quadrantTitles[quadrant - 1] : "未分类";
-    }
+    // 使用系统默认字体
     
     // 顶部应用栏
     header: ToolBar {
@@ -173,8 +157,8 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             quadrantNumber: index + 1
-                            quadrantTitle: getQuadrantTitle(index + 1)
-                            quadrantColor: getQuadrantColor(index + 1)
+                            quadrantTitle: utils.getQuadrantTitle(index + 1)
+                            quadrantColor: utils.getQuadrantColor(index + 1)
                             
                             // 添加出现动画
                             NumberAnimation on opacity {

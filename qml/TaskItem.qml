@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: taskDelegate
@@ -10,28 +9,24 @@ Rectangle {
     color: "white"
     border.width: 0
     
-    // ÒõÓ°Ğ§¹û - ÓÅ»¯°æ
-    layer.enabled: true
-    layer.effect: DropShadow {
-        transparentBorder: true
-        horizontalOffset: 0
-        verticalOffset: isDragging ? 8 : 3
-        radius: isDragging ? 12.0 : 8.0
-        samples: 12
-        color: isDragging ? "#40000000" : "#25000000"
-        Behavior on verticalOffset { NumberAnimation { duration: 150 } }
-        Behavior on radius { NumberAnimation { duration: 150 } }
-        Behavior on color { ColorAnimation { duration: 150 } }
+    // ä½¿ç”¨ç»Ÿä¸€çš„é˜´å½±æ•ˆæœç»„ä»¶
+    ShadowEffect {
+        id: shadowEffect
+        offsetY: 3
+        blurRadius: 8.0
+        shadowColor: "#25000000"
+        animated: true
+        Component.onCompleted: applyTo(taskDelegate)
     }
     
-    // ??????
+    // æ¸å˜èƒŒæ™¯
     Rectangle {
         id: gradientBackground
         anchors.fill: parent
         radius: parent.radius
         opacity: 0.05
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.lighter(getQuadrantColor(taskQuadrant), 1.1) }
+            GradientStop { position: 0.0; color: Qt.lighter(parent.parent.Material.accent, 1.1) }
             GradientStop { position: 1.0; color: "white" }
         }
     }
@@ -40,71 +35,14 @@ Rectangle {
     property string taskTitle: ""
     property string taskDescription: ""
     property int taskQuadrant: 4
-    property bool isDragging: false
-    property int originalQuadrant: taskQuadrant
     
-    signal dragFinished()
-    
-    // ???????
+    // ç»Ÿä¸€åŠ¨ç”»æ•ˆæœ
     Behavior on scale { NumberAnimation { duration: 150 } }
     Behavior on opacity { NumberAnimation { duration: 150 } }
-    Behavior on x { enabled: !isDragging; NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-    Behavior on y { enabled: !isDragging; NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
+    Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
+    Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
     
-    // ??????£??????§¹??
-    states: [
-        State {
-            name: "dragging"
-            when: isDragging
-            PropertyChanges { target: taskDelegate; scale: 1.05; opacity: 0.9; z: 100 }
-            PropertyChanges { target: gradientBackground; opacity: 0.15 }
-        }
-    ]
-    
-    // ???????
-    MouseArea {
-        id: dragArea
-        anchors.fill: parent
-        drag.target: isDragging ? parent : undefined
-        drag.axis: Drag.XAndYAxis
-        drag.minimumX: 0
-        drag.minimumY: 0
-        drag.filterChildren: true
-        
-        onPressed: function(mouse) {
-            if (mouse.button === Qt.LeftButton) {
-                originalQuadrant = taskQuadrant
-                isDragging = true
-            }
-        }
-        
-        onReleased: function() {
-            if (isDragging) {
-                isDragging = false
-                var newQuadrant = detectQuadrant()
-                if (newQuadrant !== originalQuadrant && newQuadrant >= 1 && newQuadrant <= 4) {
-                    taskController.moveTaskToQuadrant(taskId, newQuadrant)
-                }
-                taskDelegate.dragFinished()
-            }
-        }
-        
-        function detectQuadrant() {
-            var container = parent.parent
-            if (!container) return originalQuadrant
-            
-            // ÓÅ»¯°æ - ¼ò»¯ÏóÏŞ¼ì²âÂß¼­
-            var centerX = parent.x + parent.width / 2
-            var centerY = parent.y + parent.height / 2
-            var isLeft = centerX < container.width / 2
-            var isTop = centerY < container.height / 2
-            
-            // ÏóÏŞÓ³Éä: ×óÉÏ=1, ÓÒÉÏ=2, ×óÏÂ=3, ÓÒÏÂ=4
-            return isLeft ? (isTop ? 1 : 3) : (isTop ? 2 : 4)
-        }
-    }
-    
-    // ???????
+    // ä»»åŠ¡å†…å®¹
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 8
@@ -126,7 +64,7 @@ Rectangle {
                     Layout.fillWidth: true
                 }
                 
-                // ???????????????
+                // ä»»åŠ¡æè¿°æ ‡ç­¾
                 Label {
                     text: taskDescription
                     font.pixelSize: 12
@@ -143,40 +81,37 @@ Rectangle {
                 checked: false
                 onClicked: taskController.setTaskCompleted(taskId, checked)
                 
-                // ????????????????
-                enabled: !isDragging
+                enabled: true
                 
                 indicator: Rectangle {
                     implicitWidth: 22
                     implicitHeight: 22
                     radius: 4
+                    // ç®€åŒ–é¢œè‰²é€»è¾‘
                     border.color: taskCheckBox.checked ? "#0078d4" : 
                                  taskCheckBox.hovered ? "#666666" : "#999999"
                     border.width: 1.5
                     color: taskCheckBox.checked ? "#0078d4" : "transparent"
                     
-                    // ??????????
+                    // æ·»åŠ è¿‡æ¸¡åŠ¨ç”»
                     Behavior on border.color { ColorAnimation { duration: 150 } }
                     Behavior on color { ColorAnimation { duration: 150 } }
                     
                     Text {
-                        text: "?"
+                        text: "âœ“"
                         color: "white"
                         anchors.centerIn: parent
                         font.pixelSize: 14
+                        // ç®€åŒ–å¯è§æ€§å’Œé€æ˜åº¦é€»è¾‘
                         visible: taskCheckBox.checked
                         opacity: taskCheckBox.checked ? 1.0 : 0.0
                         
-                        // ??????????
+                        // æ·»åŠ è¿‡æ¸¡åŠ¨ç”»
                         Behavior on opacity { NumberAnimation { duration: 150 } }
                     }
                 }
                 
-                MouseArea {
-                    anchors.fill: parent
-                    onPressed: mouse.accepted = !isDragging
-                    onClicked: if (!isDragging) taskCheckBox.toggle()
-                }
+                // CheckBoxå·²ç»æœ‰è‡ªå·±çš„é¼ æ ‡å¤„ç†ï¼Œä¸éœ€è¦é¢å¤–çš„MouseArea
             }
         }
     }

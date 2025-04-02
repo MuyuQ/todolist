@@ -3,46 +3,12 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
 
-Dialog {
+BaseDialog {
     id: addTaskDialog
-    modal: true
     title: "创建新任务"
     standardButtons: Dialog.Ok | Dialog.Cancel
-    anchors.centerIn: parent
-    width: 480
-    height: 400
-    padding: 24
     
-    // Material设计风格
-    Material.elevation: 24
-    Material.background: "white"
-    
-    // 对话框标题样式
-    header: Pane {
-        width: parent.width
-        padding: 24
-        Material.elevation: 0
-        Material.background: "transparent"
-        
-        Label {
-            text: addTaskDialog.title
-            font.pixelSize: 20
-            font.weight: Font.Medium
-            color: Material.foreground
-        }
-    }
-    
-    // 对话框按钮样式
-    footer: DialogButtonBox {
-        standardButtons: addTaskDialog.standardButtons
-        padding: 16
-        alignment: Qt.AlignRight
-        Material.background: "transparent"
-        Material.elevation: 0
-        
-        onAccepted: addTaskDialog.accept()
-        onRejected: addTaskDialog.reject()
-    }
+    // 直接使用全局单例Utils
 
     property string taskTitle: ""
     property string taskDescription: ""
@@ -50,88 +16,114 @@ Dialog {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 16
+        anchors.margins: 4
+        spacing: 24
 
         // 任务标题输入框
-        TextField {
+        InputField {
             id: titleField
-            placeholderText: "任务标题"
-            Layout.fillWidth: true
-            font.pixelSize: 16
-            selectByMouse: true
-            onTextChanged: taskTitle = text
-            
-            background: Rectangle {
-                implicitWidth: 200
-                implicitHeight: 50
-                color: "transparent"
-                border.color: titleField.activeFocus ? Material.accent : "#e0e0e0"
-                border.width: titleField.activeFocus ? 2 : 1
-                radius: 4
-            }
+            label: "任务标题"
+            placeholderText: "请输入任务标题"
+            onTextEdited: taskTitle = text
         }
 
         // 任务描述输入框
-        ScrollView {
-            Layout.fillWidth: true
+        InputField {
+            id: descriptionField
+            label: "任务描述"
+            placeholderText: "请输入任务描述（可选）"
+            isTextArea: true
             Layout.fillHeight: true
-            clip: true
-            
-            TextArea {
-                id: descriptionField
-                placeholderText: "任务描述"
-                wrapMode: Text.WordWrap
-                selectByMouse: true
-                font.pixelSize: 14
-                onTextChanged: taskDescription = text
-                
-                background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: 100
-                    color: "transparent"
-                    border.color: descriptionField.activeFocus ? Material.accent : "#e0e0e0"
-                    border.width: descriptionField.activeFocus ? 2 : 1
-                    radius: 4
-                }
-            }
+            onTextEdited: taskDescription = text
         }
 
         // 象限选择
-        Label {
-            text: "选择任务象限"
-            font.pixelSize: 14
-            color: Material.foreground
-        }
-        
-        GridLayout {
+        ColumnLayout {
             Layout.fillWidth: true
-            columns: 2
-            rowSpacing: 8
-            columnSpacing: 8
+            spacing: 12
             
-            Repeater {
-                model: 4
+            Label {
+                text: "选择任务象限"
+                font.pixelSize: 14
+                font.weight: Font.Medium
+                color: Material.foreground
+            }
+            
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 120
+                color: "#f5f5f5"
+                radius: 8
+                border.width: 1
+                border.color: "#e0e0e0"
                 
-                RadioButton {
-                    text: getQuadrantTitle(index + 1)
+                GridLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    columns: 2
+                    rowSpacing: 12
+                    columnSpacing: 16
+                    
+                    Repeater {
+                        model: 4
+                
+                         RadioButton {
+                    id: quadrantRadio
+                    text: utils.getQuadrantTitle(index + 1)
                     checked: index + 1 === selectedQuadrant
                     onClicked: selectedQuadrant = index + 1
+                    padding: 8
+                    
+                    indicator: Rectangle {
+                        implicitWidth: 20
+                        implicitHeight: 20
+                        x: quadrantRadio.leftPadding
+                        y: parent.height / 2 - height / 2
+                        radius: 10
+                        color: "transparent"
+                        border.color: quadrantRadio.checked ? Material.accent : "#9e9e9e"
+                        border.width: 2
+                        
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            anchors.centerIn: parent
+                            radius: 5
+                            color: utils.getQuadrantColor(index + 1)
+                            visible: quadrantRadio.checked
+                            
+                            // 添加选中动画
+                            Behavior on width {
+                                NumberAnimation { duration: 100 }
+                            }
+                        }
+                    }
                     
                     contentItem: RowLayout {
-                        spacing: 8
+                        spacing: 12
+                        anchors.left: quadrantRadio.indicator.right
+                        anchors.leftMargin: 12
+                        anchors.right: quadrantRadio.right
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        
                         Rectangle {
-                            width: 12
-                            height: 12
-                            radius: 6
-                            color: getQuadrantColor(index + 1)
-                            border.width: 1
-                            border.color: Qt.darker(getQuadrantColor(index + 1), 1.2)
+                            width: 16
+                            height: 16
+                            radius: 4
+                            color: utils.getQuadrantColor(index + 1)
+                            opacity: 0.8
                         }
                         
                         Text {
-                            text: parent.parent.text
+                            text: quadrantRadio.text
                             font.pixelSize: 14
-                            color: Material.foreground
+                            font.weight: quadrantRadio.checked ? Font.Medium : Font.Normal
+                            color: quadrantRadio.checked ? Material.accent : Material.foreground
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+                    }
                         }
                     }
                 }
@@ -139,7 +131,9 @@ Dialog {
         }
     }
 
-    onAccepted: {
+    // 继承BaseDialog的动画
+
+onAccepted: {
         if (taskTitle.trim() !== "") {
             taskController.addTask(taskTitle, taskDescription, selectedQuadrant)
         }

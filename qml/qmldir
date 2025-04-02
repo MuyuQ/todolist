@@ -1,0 +1,2 @@
+singleton CommonStyles 1.0 CommonStyles.qml
+singleton Utils 1.0 Utils.qml

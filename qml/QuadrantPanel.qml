@@ -1,10 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: root
+    
     
     property int quadrantNumber: 1
     property string quadrantTitle: "未分类"
@@ -15,15 +15,13 @@ Rectangle {
     border.width: 0
     z: 1
     
-    // 阴影效果 - 优化版
-    layer.enabled: true
-    layer.effect: DropShadow {
-        transparentBorder: true
-        horizontalOffset: 0
-        verticalOffset: 4
-        radius: 12.0
-        samples: 12
-        color: "#30000000"
+    // 使用统一的阴影效果组件
+    ShadowEffect {
+        id: shadowEffect
+        offsetY: 4
+        blurRadius: 12.0
+        shadowColor: "#30000000"
+        Component.onCompleted: applyTo(root)
     }
     
     ColumnLayout {
@@ -72,68 +70,19 @@ Rectangle {
                 quadrantNumber: root.quadrantNumber
             }
             
-            // 网格布局容器
-            Item {
+            // 简化为列表布局
+            ListView {
                 width: parent.width
                 height: parent.height
+                spacing: 8
+                model: taskListModel.model
                 
-                // 计算网格参数
-                readonly property int itemWidth: 210
-                readonly property int gridSpacingX: 220
-                readonly property int gridSpacingY: 90
-                readonly property int gridMargin: 5
-                readonly property int gridColumns: Math.max(1, Math.floor(width / gridSpacingX))
-                
-                function calculateNewIndex(item) {
-                    return Math.floor(item.y / gridSpacingY) * gridColumns + Math.floor(item.x / gridSpacingX)
-                }
-                
-                function snapToGrid(item) {
-                    item.x = Math.max(0, Math.min(Math.round(item.x / gridSpacingX) * gridSpacingX, width - item.width))
-                    item.y = Math.max(0, Math.min(Math.round(item.y / gridSpacingY) * gridSpacingY, height - item.height))
-                    rearrangeTasks()
-                }
-                
-                function rearrangeTasks() {
-                    // 优化版 - 减少重复计算
-                    var columns = gridColumns
-                    var spacingX = gridSpacingX
-                    var spacingY = gridSpacingY
-                    var margin = gridMargin
-                    
-                    for (var i = 0; i < taskRepeater.count; i++) {
-                        var item = taskRepeater.itemAt(i)
-                        if (item) {
-                            item.x = (i % columns) * spacingX + margin
-                            item.y = Math.floor(i / columns) * spacingY + margin
-                        }
-                    }
-                }
-                
-                Repeater {
-                    id: taskRepeater
-                    model: taskListModel.model
-                    
-                    TaskItem {
-                        id: taskItem
-                        width: 210
-                        x: (model.order_index % Math.max(1, Math.floor(parent.width / 220))) * 220
-                        y: Math.floor(model.order_index / Math.max(1, Math.floor(parent.width / 220))) * 90
-                        taskId: model.id || -1
-                        taskTitle: model.title || ""
-                        taskDescription: model.description || ""
-                        taskQuadrant: model.quadrant || 4
-                        
-                        // 拖拽完成后重新排序 - 优化版
-                        onDragFinished: {
-                            // 自动对齐到网格
-                            parent.snapToGrid(taskItem)
-                            // 计算新的任务索引并更新
-                            taskController.updateTaskOrder(taskId, parent.calculateNewIndex(taskItem))
-                            // 重新排列所有任务项
-                            Qt.callLater(parent.rearrangeTasks)
-                        }
-                    }
+                delegate: TaskItem {
+                    width: parent.width - 10
+                    taskId: model.id || -1
+                    taskTitle: model.title || ""
+                    taskDescription: model.description || ""
+                    taskQuadrant: model.quadrant || 4
                 }
             }
         }
