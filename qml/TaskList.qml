@@ -56,14 +56,29 @@ Rectangle {
             spacing: 8
             clip: true
             
-            model: taskController.getAllTasks()
+            // 使用ListModel来管理任务数据
+            model: ListModel { id: allTasksModel }
+            
+            Component.onCompleted: {
+                updateTaskList()
+            }
             
             Connections {
                 target: taskController
                 function onTaskUpdated() {
-                    taskList.model = taskController.getAllTasks()
+                    updateTaskList()
                 }
             }
+            
+            // 更新任务列表函数
+            function updateTaskList() {
+                allTasksModel.clear()
+                var tasks = taskController.getAllTasks()
+                for (var i = 0; i < tasks.length; i++) {
+                    allTasksModel.append(tasks[i])
+                }
+            }
+
             delegate: TaskItem {
                 width: taskList.width
                 taskId: model.id

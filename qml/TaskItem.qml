@@ -26,7 +26,7 @@ Rectangle {
         radius: parent.radius
         opacity: 0.05
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.lighter(parent.parent.Material.accent, 1.1) }
+            GradientStop { position: 0.0; color: Qt.lighter(Material.accent, 1.1) }
             GradientStop { position: 1.0; color: "white" }
         }
     }

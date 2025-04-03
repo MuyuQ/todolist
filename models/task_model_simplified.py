@@ -1,15 +1,16 @@
 from PySide6.QtCore import QObject, Signal, Property, Slot, QAbstractListModel, QModelIndex, Qt, QByteArray
-import sqlite3
-import os
+from .db_manager import DatabaseManager
 
 class Task:
-    def __init__(self, id=None, title="", description="", quadrant=4, is_completed=False, created_at=None):
+    """任务数据模型类"""
+    def __init__(self, id=None, title="", description="", quadrant=4, is_completed=False, created_at=None, order_index=0):
         self.id = id
         self.title = title
         self.description = description
         self.quadrant = quadrant  # 1-4对应四个象限
         self.is_completed = is_completed
         self.created_at = created_at
+        self.order_index = order_index
 
 class TaskModel(QAbstractListModel):
     # 定义角色
@@ -19,6 +20,7 @@ class TaskModel(QAbstractListModel):
     QuadrantRole = Qt.UserRole + 4
     IsCompletedRole = Qt.UserRole + 5
     CreatedAtRole = Qt.UserRole + 6
+    OrderIndexRole = Qt.UserRole + 7
     
     # 信号
     dataChanged = Signal(QModelIndex, QModelIndex, list)
@@ -29,74 +31,28 @@ class TaskModel(QAbstractListModel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.tasks = []
-        self.db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "tasks.db")
-        self.init_database()
+        self.db = DatabaseManager()
         self.load_tasks()
     
-    def init_database(self):
-        # 确保数据目录存在
-        data_dir = os.path.dirname(self.db_path)
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        
-        # 创建数据库连接和表
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 创建任务表
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            quadrant INTEGER DEFAULT 4,
-            is_completed BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            order_index INTEGER DEFAULT 0
-        )
-        ''')
-        
-        # 检查是否需要添加order_index列
-        cursor.execute("PRAGMA table_info(tasks)")
-        columns = cursor.fetchall()
-        has_order_index = any(column[1] == 'order_index' for column in columns)
-        
-        if not has_order_index:
-            cursor.execute("ALTER TABLE tasks ADD COLUMN order_index INTEGER DEFAULT 0")
-        
-        conn.commit()
-        conn.close()
-    
-    def _get_db_connection(self):
-        """获取数据库连接，减少代码冗余"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # 使结果可以通过列名访问
-        return conn
-    
     def load_tasks(self):
-        # 从数据库加载任务
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
-        
-        # 只加载未完成的任务
-        cursor.execute("SELECT * FROM tasks WHERE is_completed = 0 ORDER BY created_at DESC")
-        rows = cursor.fetchall()
+        """从数据库加载任务"""
+        rows = self.db.get_all_tasks(completed=False)
         
         self.beginResetModel()
         self.tasks = []
-        for row in rows:
-            task = Task(
-                id=row['id'],
-                title=row['title'],
-                description=row['description'],
-                quadrant=row['quadrant'],
-                is_completed=row['is_completed'],
-                created_at=row['created_at']
-            )
-            self.tasks.append(task)
+        if rows:
+            for row in rows:
+                task = Task(
+                    id=row['id'],
+                    title=row['title'],
+                    description=row['description'],
+                    quadrant=row['quadrant'],
+                    is_completed=row['is_completed'],
+                    created_at=row['created_at'],
+                    order_index=row['order_index']
+                )
+                self.tasks.append(task)
         self.endResetModel()
-        
-        conn.close()
     
     def rowCount(self, parent=QModelIndex()):
         return len(self.tasks)
@@ -108,7 +64,8 @@ class TaskModel(QAbstractListModel):
             self.DescriptionRole: QByteArray(b'description'),
             self.QuadrantRole: QByteArray(b'quadrant'),
             self.IsCompletedRole: QByteArray(b'isCompleted'),
-            self.CreatedAtRole: QByteArray(b'createdAt')
+            self.CreatedAtRole: QByteArray(b'createdAt'),
+            self.OrderIndexRole: QByteArray(b'orderIndex')
         }
         return roles
     
@@ -130,29 +87,26 @@ class TaskModel(QAbstractListModel):
             return task.is_completed
         elif role == self.CreatedAtRole:
             return task.created_at
+        elif role == self.OrderIndexRole:
+            return task.order_index
         
         return None
     
     @Slot(str, str, int, result=bool)
     def addTask(self, title, description, quadrant=4):
+        """添加新任务"""
         if not title.strip():
             return False
         
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "INSERT INTO tasks (title, description, quadrant) VALUES (?, ?, ?)",
-            (title, description, quadrant)
-        )
-        task_id = cursor.lastrowid
+        # 插入任务到数据库
+        task_id = self.db.add_task(title, description, quadrant)
         
         # 获取创建时间
-        cursor.execute("SELECT created_at FROM tasks WHERE id = ?", (task_id,))
-        created_at = cursor.fetchone()[0]
-        
-        conn.commit()
-        conn.close()
+        created_at_row = self.db.execute_query(
+            "SELECT created_at FROM tasks WHERE id = ?", 
+            (task_id,)
+        )
+        created_at = created_at_row['created_at'] if created_at_row else None
         
         # 添加到模型
         self.beginInsertRows(QModelIndex(), 0, 0)
@@ -172,17 +126,9 @@ class TaskModel(QAbstractListModel):
     
     @Slot(int, bool)
     def setTaskCompleted(self, task_id, completed):
+        """设置任务完成状态"""
         # 在数据库中更新任务状态
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "UPDATE tasks SET is_completed = ? WHERE id = ?",
-            (1 if completed else 0, task_id)
-        )
-        
-        conn.commit()
-        conn.close()
+        self.db.set_task_completed(task_id, completed)
         
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):
@@ -201,20 +147,12 @@ class TaskModel(QAbstractListModel):
     
     @Slot(int, str, str)
     def updateTask(self, task_id, title, description):
+        """更新任务信息"""
         if not title.strip():
             return
         
         # 在数据库中更新任务
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "UPDATE tasks SET title = ?, description = ? WHERE id = ?",
-            (title, description, task_id)
-        )
-        
-        conn.commit()
-        conn.close()
+        self.db.update_task(task_id, title, description)
         
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):
@@ -227,30 +165,15 @@ class TaskModel(QAbstractListModel):
     
     @Slot(int, int)
     def moveTaskToQuadrant(self, task_id, new_quadrant):
+        """移动任务到新象限"""
         if new_quadrant < 1 or new_quadrant > 4:
             return
         
-        # 在数据库中更新任务象限
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
+        # 更新象限并获取旧象限
+        success, old_quadrant = self.db.move_task_to_quadrant(task_id, new_quadrant)
         
-        # 先获取旧的象限
-        cursor.execute("SELECT quadrant FROM tasks WHERE id = ?", (task_id,))
-        result = cursor.fetchone()
-        if not result:
-            conn.close()
+        if not success or old_quadrant is None:
             return
-        
-        old_quadrant = result[0]
-        
-        # 更新象限
-        cursor.execute(
-            "UPDATE tasks SET quadrant = ? WHERE id = ?",
-            (new_quadrant, task_id)
-        )
-        
-        conn.commit()
-        conn.close()
         
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):
@@ -263,16 +186,12 @@ class TaskModel(QAbstractListModel):
     
     @Slot(int, result='QVariant')
     def getTasksByQuadrant(self, quadrant):
+        """获取指定象限的任务"""
         # 获取指定象限的任务，并按order_index排序
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
+        rows = self.db.get_tasks_by_quadrant(quadrant)
         
-        cursor.execute(
-            "SELECT * FROM tasks WHERE quadrant = ? AND is_completed = 0 ORDER BY order_index ASC, created_at DESC",
-            (quadrant,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
+        if not rows:
+            return []
         
         filtered_tasks = [{
             'id': row['id'],
@@ -285,15 +204,11 @@ class TaskModel(QAbstractListModel):
         
     @Slot(result='QVariant')
     def getCompletedTasks(self):
-        # 获取已完成的任务
-        conn = self._get_db_connection()
-        cursor = conn.cursor()
+        """获取已完成的任务"""
+        rows = self.db.get_all_tasks(completed=True)
         
-        cursor.execute(
-            "SELECT * FROM tasks WHERE is_completed = 1 ORDER BY created_at DESC"
-        )
-        rows = cursor.fetchall()
-        conn.close()
+        if not rows:
+            return []
         
         completed_tasks = [{
             'id': row['id'],
@@ -306,6 +221,7 @@ class TaskModel(QAbstractListModel):
     
     @Slot()
     def refreshTasks(self):
+        """刷新任务列表"""
         self.load_tasks()
     
     @Slot(int, int)
@@ -314,24 +230,5 @@ class TaskModel(QAbstractListModel):
         if new_order_index < 0:
             return
         
-        # 在数据库中更新任务排序
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 获取任务的象限
-        cursor.execute("SELECT quadrant FROM tasks WHERE id = ?", (task_id,))
-        result = cursor.fetchone()
-        if not result:
-            conn.close()
-            return
-        
-        quadrant = result[0]
-        
         # 更新排序索引
-        cursor.execute(
-            "UPDATE tasks SET order_index = ? WHERE id = ?",
-            (new_order_index, task_id)
-        )
-        
-        conn.commit()
-        conn.close()
+        self.db.update_task_order(task_id, new_order_index)

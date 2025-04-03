@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls.Material 2.15
 
+// 导入Utils单例
+import "./" as QmlImports
+
 ApplicationWindow {
     id: root
     visible: true
@@ -157,8 +160,8 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             quadrantNumber: index + 1
-                            quadrantTitle: utils.getQuadrantTitle(index + 1)
-                            quadrantColor: utils.getQuadrantColor(index + 1)
+                            quadrantTitle: Utils.getQuadrantTitle(index + 1)
+                            quadrantColor: Utils.getQuadrantColor(index + 1)
                             
                             // 添加出现动画
                             NumberAnimation on opacity {
@@ -188,7 +191,7 @@ ApplicationWindow {
         id: completedTasksPage
         
         CompletedTaskList {
-            anchors.fill: parent
+            // 不使用anchors或parent引用
             
             // 添加出现动画
             NumberAnimation on opacity {

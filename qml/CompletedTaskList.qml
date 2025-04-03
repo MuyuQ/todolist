@@ -3,6 +3,9 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
 
+// 导入Utils单例
+import "." as QmlImports
+
 Pane {
     id: root
     
@@ -13,6 +16,28 @@ Pane {
     
     // 已完成任务模型
     property var completedTasksModel: ListModel { id: completedTasksModel }
+    
+    // 更新已完成任务列表函数
+    function updateCompletedTasks() {
+        completedTasksModel.clear()
+        var tasks = taskController.getCompletedTasks()
+        var isEmpty = !tasks || tasks.length === 0
+        
+        // 只在状态变化时处理空任务列表状态
+        if (isEmpty && !completedTasksList.footerItem) {
+            completedTasksList.footerItem = emptyStateDelegate.createObject(completedTasksList)
+        } else if (!isEmpty && completedTasksList.footerItem) {
+            completedTasksList.footerItem.destroy()
+            completedTasksList.footerItem = null
+        }
+        
+        if (isEmpty) return
+        
+        // 添加任务到模型
+        for (var i = 0; i < tasks.length; i++) {
+            completedTasksModel.append(tasks[i])
+        }
+    }
     
     ColumnLayout {
         anchors.fill: parent
@@ -49,6 +74,8 @@ Pane {
             }
         }
         
+
+        
         // 任务列表
         ListView {
             id: completedTasksList
@@ -60,39 +87,18 @@ Pane {
             
             // 连接到任务控制器
             Component.onCompleted: {
-                updateCompletedTasks()
+                root.updateCompletedTasks()
             }
             
             Connections {
                 target: taskController
                 function onTaskUpdated() {
-                    updateCompletedTasks()
+                    root.updateCompletedTasks()
                 }
             }
             
-            // 更新已完成任务列表
+            // 空状态项引用
             property var footerItem: null
-            
-            function updateCompletedTasks() {
-                completedTasksModel.clear()
-                var tasks = taskController.getCompletedTasks()
-                var isEmpty = !tasks || tasks.length === 0
-                
-                // 只在状态变化时处理空任务列表状态
-                if (isEmpty && !footerItem) {
-                    footerItem = emptyStateDelegate.createObject(completedTasksList)
-                } else if (!isEmpty && footerItem) {
-                    footerItem.destroy()
-                    footerItem = null
-                }
-                
-                if (isEmpty) return
-                
-                // 添加任务到模型
-                for (var i = 0; i < tasks.length; i++) {
-                    completedTasksModel.append(tasks[i])
-                }
-            }
             
             // 无任务时的提示
             Component {
@@ -207,7 +213,7 @@ Pane {
                         width: 16
                         height: 16
                         radius: 8
-                        color: utils.getQuadrantColor(model.quadrant)
+                        color: QmlImports.Utils.getQuadrantColor(model.quadrant)
                         opacity: 0.7
                     }
                 }

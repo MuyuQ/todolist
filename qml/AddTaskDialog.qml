@@ -2,6 +2,9 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
+import "./" as App
+
+// 正确导入Utils单例
 
 BaseDialog {
     id: addTaskDialog
@@ -69,7 +72,11 @@ BaseDialog {
                 
                          RadioButton {
                     id: quadrantRadio
-                    text: utils.getQuadrantTitle(index + 1)
+                    // 直接使用象限标题数组
+                    property var quadrantTitles: ["重要且紧急", "重要不紧急", "不重要但紧急", "不重要不紧急"]
+                    property var quadrantColors: ["#ef5350", "#66bb6a", "#42a5f5", "#ab47bc"]
+                    
+                    text: quadrantTitles[index]
                     checked: index + 1 === selectedQuadrant
                     onClicked: selectedQuadrant = index + 1
                     padding: 8
@@ -89,7 +96,7 @@ BaseDialog {
                             height: 10
                             anchors.centerIn: parent
                             radius: 5
-                            color: utils.getQuadrantColor(index + 1)
+                            color: quadrantRadio.quadrantColors[index]
                             visible: quadrantRadio.checked
                             
                             // 添加选中动画
@@ -111,7 +118,7 @@ BaseDialog {
                             width: 16
                             height: 16
                             radius: 4
-                            color: utils.getQuadrantColor(index + 1)
+                            color: quadrantRadio.quadrantColors[index]
                             opacity: 0.8
                         }
                         
