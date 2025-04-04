@@ -3,8 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
 
-// 导入Utils单例
-import "." as QmlImports
+// 导入单例
+import "qrc:/qml" as App
 
 Pane {
     id: root
@@ -23,7 +23,7 @@ Pane {
         var tasks = taskController.getCompletedTasks()
         var isEmpty = !tasks || tasks.length === 0
         
-        // 只在状态变化时处理空任务列表状态
+        // 处理空状态
         if (isEmpty && !completedTasksList.footerItem) {
             completedTasksList.footerItem = emptyStateDelegate.createObject(completedTasksList)
         } else if (!isEmpty && completedTasksList.footerItem) {
@@ -31,12 +31,13 @@ Pane {
             completedTasksList.footerItem = null
         }
         
+        // 如果没有任务，直接返回
         if (isEmpty) return
         
-        // 添加任务到模型
-        for (var i = 0; i < tasks.length; i++) {
-            completedTasksModel.append(tasks[i])
-        }
+        // 批量添加任务到模型
+        tasks.forEach(function(task) {
+            completedTasksModel.append(task)
+        })
     }
     
     ColumnLayout {
@@ -46,7 +47,7 @@ Pane {
         // 标题区域
         Pane {
             Layout.fillWidth: true
-            height: 56
+            height: CommonStyles.panel.headerHeight + 16
             padding: 0
             Material.elevation: 0
             Material.background: Material.primary
@@ -58,7 +59,7 @@ Pane {
                 
                 Label {
                     text: "已完成任务"
-                    font.pixelSize: 16
+                    font.pixelSize: CommonStyles.panel.headerFontSize
                     font.weight: Font.Medium
                     color: "white"
                 }
@@ -109,7 +110,7 @@ Pane {
                     
                     Column {
                         anchors.centerIn: parent
-                        spacing: 16
+                        spacing: CommonStyles.panel.spacing * 2
                         
                         Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
@@ -130,7 +131,7 @@ Pane {
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "暂无已完成任务"
-                            font.pixelSize: 16
+                            font.pixelSize: CommonStyles.panel.headerFontSize
                             color: Material.foreground
                             opacity: 0.6
                         }
@@ -152,20 +153,15 @@ Pane {
             // 任务项代理
             delegate: ItemDelegate {
                 width: completedTasksList.width
-                height: 72
+                height: CommonStyles.listItem.height
                 
                 // 悬停效果
                 highlighted: hovered
                 
-                // 点击恢复任务
-                onClicked: {
-                    taskController.setTaskCompleted(model.id, false)
-                }
-                
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 16
-                    spacing: 16
+                    anchors.margins: CommonStyles.listItem.padding * 2
+                    spacing: CommonStyles.listItem.spacing * 2
                     
                     // 完成标记
                     Rectangle {
@@ -190,7 +186,7 @@ Pane {
                         
                         Label {
                             text: model.title
-                            font.pixelSize: 16
+                            font.pixelSize: CommonStyles.listItem.titleFontSize + 2
                             font.weight: Font.Medium
                             color: Material.foreground
                             Layout.fillWidth: true
@@ -199,7 +195,7 @@ Pane {
                         
                         Label {
                             text: model.description || ""
-                            font.pixelSize: 14
+                            font.pixelSize: CommonStyles.listItem.descFontSize + 2
                             color: Material.foreground
                             opacity: 0.6
                             Layout.fillWidth: true
@@ -213,7 +209,7 @@ Pane {
                         width: 16
                         height: 16
                         radius: 8
-                        color: QmlImports.Utils.getQuadrantColor(model.quadrant)
+                        color: App.Utils.getQuadrantColor(model.quadrant)
                         opacity: 0.7
                     }
                 }
@@ -221,8 +217,8 @@ Pane {
                 // 分隔线
                 Rectangle {
                     width: parent.width
-                    height: 1
-                    color: Material.dividerColor
+                    height: CommonStyles.divider.height
+                    color: CommonStyles.divider.color
                     anchors.bottom: parent.bottom
                 }
             }

@@ -1,6 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls.Material 2.15
+
+// 导入单例
+import "qrc:/qml" as App
 
 Rectangle {
     id: root
@@ -23,28 +27,29 @@ Rectangle {
         
         Rectangle {
             Layout.fillWidth: true
-            height: 40
-            color: "#f5f5f5"
-            radius: 4
+            height: CommonStyles.panel.headerHeight
+            color: CommonStyles.input.fieldBackground
+            radius: CommonStyles.input.fieldRadius / 2
             
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+                anchors.leftMargin: CommonStyles.panel.margin
+                anchors.rightMargin: CommonStyles.panel.margin
                 
                 Label {
                     text: "所有任务"
-                    font.pixelSize: 16
-                    font.bold: true
-                    color: "#333333"
+                    font.pixelSize: CommonStyles.panel.headerFontSize
+                    font.weight: Font.Medium
+                    color: Material.foreground
                 }
                 
                 Item { Layout.fillWidth: true }
                 
                 Label {
                     text: taskList.count + " 个任务"
-                    font.pixelSize: 14
-                    color: "#666666"
+                    font.pixelSize: CommonStyles.listItem.descFontSize + 2
+                    color: Material.foreground
+                    opacity: 0.7
                 }
             }
         }

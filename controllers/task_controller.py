@@ -1,5 +1,4 @@
 from PySide6.QtCore import QObject, Signal, Slot
-import sqlite3
 
 class TaskController(QObject):
     # 信号
@@ -55,24 +54,11 @@ class TaskController(QObject):
     @Slot(result='QVariant')
     def getAllTasks(self):
         """获取所有任务列表"""
-        # 直接从数据库获取所有未完成任务，而不是返回整个model对象
-        conn = sqlite3.connect(self.task_model.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY order_index ASC, created_at DESC"
-        )
-        rows = cursor.fetchall()
-        conn.close()
-        
-        all_tasks = [{
-            'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
-            'quadrant': row['quadrant'],
-            'order_index': row['order_index']
-        } for row in rows]
+        # 直接从模型获取所有任务，按象限组织
+        all_tasks = []
+        for quadrant in range(1, 5):
+            tasks = self.task_model.getTasksByQuadrant(quadrant)
+            all_tasks.extend(tasks)
         return all_tasks
     
     @Slot(result='QVariant')

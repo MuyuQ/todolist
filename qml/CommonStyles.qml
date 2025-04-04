@@ -1,4 +1,5 @@
 pragma Singleton
+pragma Singleton
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
@@ -81,5 +82,27 @@ QtObject {
     readonly property QtObject divider: QtObject {
         readonly property int height: 1
         readonly property color color: "#e0e0e0"
+    }
+    
+    // 通用颜色
+    readonly property QtObject colors: QtObject {
+        readonly property color background: "#fafafa"
+        readonly property color cardBackground: "white"
+        readonly property color primaryText: "#212121"
+        readonly property color secondaryText: "#757575"
+        readonly property color divider: "#e0e0e0"
+        readonly property color accent: Material.accent
+        readonly property color primary: Material.primary
+    }
+    
+    // 通用间距
+    readonly property QtObject spacing: QtObject {
+        readonly property int xxs: 2
+        readonly property int xs: 4
+        readonly property int s: 8
+        readonly property int m: 12
+        readonly property int l: 16
+        readonly property int xl: 24
+        readonly property int xxl: 32
     }
 }

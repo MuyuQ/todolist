@@ -2,9 +2,9 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
-import "./" as App
 
-// 正确导入Utils单例
+// 导入单例
+import "qrc:/qml" as App
 
 BaseDialog {
     id: addTaskDialog
