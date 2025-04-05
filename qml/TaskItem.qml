@@ -1,13 +1,15 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick 2.15  // Qt Quick核心模块
+import QtQuick.Controls 2.15  // Qt Quick控件模块
+import QtQuick.Layouts 1.15  // 布局管理模块
 
+// 任务项组件
+// 用于在列表中显示单个任务，包含任务信息和操作按钮
 Rectangle {
-    id: taskDelegate
-    height: 80
-    radius: 12
-    color: "white"
-    border.width: 0
+    id: taskDelegate  // 组件ID
+    height: 80  // 固定高度
+    radius: 12  // 圆角半径
+    color: "white"  // 背景色
+    border.width: 0  // 无边框
     
     // 使用统一的阴影效果组件
     ShadowEffect {

@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
 
 // 导入单例
-import "qrc:/qml" as App
+import "." as App
 
 BaseDialog {
     id: addTaskDialog

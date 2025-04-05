@@ -1,19 +1,20 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Window 2.15
-import QtQuick.Controls.Material 2.15
+import QtQuick 2.15  // Qt Quick核心模块
+import QtQuick.Controls 2.15  // Qt Quick控件模块
+import QtQuick.Layouts 1.15  // 布局管理模块
+import QtQuick.Window 2.15  // 窗口管理模块
+import QtQuick.Controls.Material 2.15  // Material设计风格
 
-// 导入Utils单例
-import "./" as QmlImports
+// 导入本地QML模块和单例
+import "./" as QmlImports  // 导入当前目录下的QML组件
 
+// 主应用窗口
 ApplicationWindow {
-    id: root
-    visible: true
-    width: 1200
-    height: 800
-    title: qsTr("时光四象限")
-    color: "#fafafa"
+    id: root  // 根元素ID，可用于在其他元素中引用主窗口
+    visible: true  // 窗口默认可见
+    width: 1200  // 初始宽度
+    height: 800  // 初始高度
+    title: qsTr("时光四象限")  // 窗口标题，使用qsTr支持国际化
+    color: "#fafafa"  // 窗口背景色，浅灰色
     
     // Material主题设置
     Material.theme: Material.Light

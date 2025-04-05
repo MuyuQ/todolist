@@ -1,9 +1,16 @@
-import sqlite3
-import os
-from contextlib import contextmanager
+import sqlite3  # SQLite数据库接口
+import os  # 操作系统接口，用于文件路径处理
+from contextlib import contextmanager  # 上下文管理器工具
 
 class DatabaseManager:
-    """数据库管理器类，集中处理所有数据库操作，减少代码重复"""
+    """数据库管理器类
+    
+    集中处理所有数据库操作，提供统一的接口访问数据库，减少代码重复。
+    实现了数据访问层(DAL)模式，将数据库操作与业务逻辑分离。
+    
+    Attributes:
+        db_path: 数据库文件路径
+    """
     
     def __init__(self, db_path=None):
         # 如果未提供数据库路径，使用默认路径
@@ -189,7 +196,7 @@ class DatabaseManager:
         if not old_quadrant_row:
             return False, None
         
-        old_quadrant = old_quadrant_row['quadrant']
+        old_quadrant = old_quadrant_row['quadrant']  # sqlite3.Row 对象可以通过列名访问值
         
         # 更新象限
         success = self.execute_query(
