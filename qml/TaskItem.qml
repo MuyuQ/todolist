@@ -82,6 +82,7 @@ Rectangle {
                 id: taskCheckBox
                 checked: false
                 onClicked: taskController.setTaskCompleted(taskId, checked)
+                Layout.alignment: Qt.AlignVCenter  // 添加垂直居中对齐
                 
                 enabled: true
                 

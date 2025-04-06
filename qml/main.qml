@@ -5,7 +5,7 @@ import QtQuick.Window 2.15  // 窗口管理模块
 import QtQuick.Controls.Material 2.15  // Material设计风格
 
 // 导入本地QML模块和单例
-import "./" as QmlImports  // 导入当前目录下的QML组件
+import "." as App  // 导入当前目录下的QML组件
 
 // 主应用窗口
 ApplicationWindow {
