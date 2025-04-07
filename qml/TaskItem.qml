@@ -78,39 +78,46 @@ Rectangle {
                 }
             }
             
-            CheckBox {
-                id: taskCheckBox
-                checked: false
-                onClicked: taskController.setTaskCompleted(taskId, checked)
-                Layout.alignment: Qt.AlignVCenter  // 添加垂直居中对齐
+            // 完全重构CheckBox布局
+            Item {
+                // 使用Item作为容器，确保CheckBox垂直居中
+                Layout.preferredWidth: taskCheckBox.width + 10
+                Layout.fillHeight: true
                 
-                enabled: true
-                
-                indicator: Rectangle {
-                    implicitWidth: 22
-                    implicitHeight: 22
-                    radius: 4
-                    // 简化颜色逻辑
-                    border.color: taskCheckBox.checked ? "#0078d4" : 
-                                 taskCheckBox.hovered ? "#666666" : "#999999"
-                    border.width: 1.5
-                    color: taskCheckBox.checked ? "#0078d4" : "transparent"
+                CheckBox {
+                    id: taskCheckBox
+                    checked: false
+                    onClicked: taskController.setTaskCompleted(taskId, checked)
+                    anchors.centerIn: parent  // 在容器中完全居中
                     
-                    // 添加过渡动画
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    enabled: true
                     
-                    Text {
-                        text: "✓"
-                        color: "white"
-                        anchors.centerIn: parent
-                        font.pixelSize: 14
-                        // 简化可见性和透明度逻辑
-                        visible: taskCheckBox.checked
-                        opacity: taskCheckBox.checked ? 1.0 : 0.0
+                    indicator: Rectangle {
+                        implicitWidth: 22
+                        implicitHeight: 22
+                        radius: 4
+                        // 简化颜色逻辑
+                        border.color: taskCheckBox.checked ? "#0078d4" : 
+                                     taskCheckBox.hovered ? "#666666" : "#999999"
+                        border.width: 1.5
+                        color: taskCheckBox.checked ? "#0078d4" : "transparent"
                         
                         // 添加过渡动画
-                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        
+                        Text {
+                            text: "✓"
+                            color: "white"
+                            anchors.centerIn: parent
+                            font.pixelSize: 14
+                            // 简化可见性和透明度逻辑
+                            visible: taskCheckBox.checked
+                            opacity: taskCheckBox.checked ? 1.0 : 0.0
+                            
+                            // 添加过渡动画
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
                     }
                 }
                 
