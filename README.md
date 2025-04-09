@@ -23,11 +23,6 @@
 - Qt 5.15
 - PySide6
 
-### 三步上手
-1. 下载代码：`git clone <repo-url>`
-2. 安装依赖：`pip install PySide6`
-3. 启动应用：`python main.py`
-
 ## 许可协议
 
 MIT开源许可 - 随心所欲地使用和修改
