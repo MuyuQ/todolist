@@ -38,6 +38,10 @@ Rectangle {
     property string taskDescription: ""
     property int taskQuadrant: 4
     
+    Component.onCompleted: {
+        consoleLogger.log("TaskItem创建: ID=" + taskId + ", 标题=" + taskTitle)
+    }
+    
     // 统一动画效果
     Behavior on scale { NumberAnimation { duration: 150 } }
     Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -87,7 +91,15 @@ Rectangle {
                 CheckBox {
                     id: taskCheckBox
                     checked: false
-                    onClicked: taskController.setTaskCompleted(taskId, checked)
+                    onClicked: {
+                        consoleLogger.log("点击任务ID: " + taskId + " 状态: " + checked)
+                        if (taskId > 0) {
+                            consoleLogger.log("调用setTaskCompleted: " + taskId + ", " + checked)
+                            taskController.setTaskCompleted(taskId, checked)
+                        } else {
+                            consoleLogger.log("错误: 无效的任务ID")
+                        }
+                    }
                     anchors.centerIn: parent  // 在容器中完全居中
                     
                     enabled: true

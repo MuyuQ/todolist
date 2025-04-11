@@ -81,7 +81,7 @@ Rectangle {
                 
                 delegate: TaskItem {
                     width: ListView.view ? ListView.view.width - 10 : 100
-                    taskId: model.id || -1
+                    taskId: model.id !== undefined ? model.id : -1
                     taskTitle: model.title || ""
                     taskDescription: model.description || ""
                     taskQuadrant: model.quadrant || 4
