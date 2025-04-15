@@ -90,6 +90,7 @@ Rectangle {
                 taskTitle: model.title
                 taskDescription: model.description
                 taskQuadrant: model.quadrant
+                taskCompleted: model.isCompleted
             }
             
             ScrollBar.vertical: ScrollBar {}

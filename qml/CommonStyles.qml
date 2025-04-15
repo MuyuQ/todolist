@@ -93,6 +93,20 @@ QtObject {
         readonly property color divider: "#e0e0e0"
         readonly property color accent: Material.accent
         readonly property color primary: Material.primary
+        
+        // 象限颜色
+        readonly property var quadrantColors: ["#ef5350", "#66bb6a", "#42a5f5", "#ab47bc"]
+        readonly property var quadrantTitles: ["重要且紧急", "重要不紧急", "不重要但紧急", "不重要不紧急"]
+        
+        // 获取象限颜色函数
+        function getQuadrantColor(quadrant) {
+            return quadrant >= 1 && quadrant <= 4 ? quadrantColors[quadrant - 1] : "#e0e0e0";
+        }
+        
+        // 获取象限标题函数
+        function getQuadrantTitle(quadrant) {
+            return quadrant >= 1 && quadrant <= 4 ? quadrantTitles[quadrant - 1] : "未分类";
+        }
     }
     
     // 通用间距

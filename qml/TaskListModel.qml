@@ -32,14 +32,17 @@ Item {
         // 按order_index排序
         tasks.sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
         
-        // 添加到列表模型
+        // 添加到列表模型 - 包括已完成和未完成的任务
         for (var i = 0; i < tasks.length; i++) {
             var task = tasks[i]
+            // 不再跳过已完成的任务，让它们也显示在四象限视图中
+            
             taskListModel.append({
                 "id": task.id,
                 "title": task.title,
                 "description": task.description || "",
-                "quadrant": task.quadrant
+                "quadrant": task.quadrant,
+                "isCompleted": task.isCompleted || false
             })
         }
         

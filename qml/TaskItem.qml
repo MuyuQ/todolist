@@ -37,6 +37,7 @@ Rectangle {
     property string taskTitle: ""
     property string taskDescription: ""
     property int taskQuadrant: 4
+    property bool taskCompleted: false
     
     Component.onCompleted: {
         consoleLogger.log("TaskItem创建: ID=" + taskId + ", 标题=" + taskTitle)
@@ -90,7 +91,12 @@ Rectangle {
                 
                 CheckBox {
                     id: taskCheckBox
-                    checked: false
+                    // 绑定到任务的完成状态属性
+                    checked: taskCompleted
+                    Component.onCompleted: {
+                        // 初始化时检查任务状态
+                        consoleLogger.log("初始化任务状态: ID=" + taskId + ", 完成状态=" + taskCompleted)
+                    }
                     onClicked: {
                         consoleLogger.log("点击任务ID: " + taskId + " 状态: " + checked)
                         if (taskId > 0) {

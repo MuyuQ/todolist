@@ -72,11 +72,9 @@ BaseDialog {
                 
                          RadioButton {
                     id: quadrantRadio
-                    // 直接使用象限标题数组
-                    property var quadrantTitles: ["重要且紧急", "重要不紧急", "不重要但紧急", "不重要不紧急"]
-                    property var quadrantColors: ["#ef5350", "#66bb6a", "#42a5f5", "#ab47bc"]
+                    // 使用CommonStyles中的象限标题和颜色
                     
-                    text: quadrantTitles[index]
+                    text: CommonStyles.colors.quadrantTitles[index]
                     checked: index + 1 === selectedQuadrant
                     onClicked: selectedQuadrant = index + 1
                     padding: 8
@@ -96,7 +94,7 @@ BaseDialog {
                             height: 10
                             anchors.centerIn: parent
                             radius: 5
-                            color: quadrantRadio.quadrantColors[index]
+                            color: CommonStyles.colors.quadrantColors[index]
                             visible: quadrantRadio.checked
                             
                             // 添加选中动画
@@ -118,7 +116,7 @@ BaseDialog {
                             width: 16
                             height: 16
                             radius: 4
-                            color: quadrantRadio.quadrantColors[index]
+                            color: CommonStyles.colors.quadrantColors[index]
                             opacity: 0.8
                         }
                         
