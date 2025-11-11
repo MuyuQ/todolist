@@ -4,12 +4,11 @@ import os
 from contextlib import contextmanager
 
 class Task:
-    """任务数据模型类"""
     def __init__(self, id=None, title="", description="", quadrant=4, is_completed=False, created_at=None, order_index=0):
         self.id = id
         self.title = title
         self.description = description
-        self.quadrant = quadrant  # 1-4对应四个象限
+        self.quadrant = quadrant
         self.is_completed = is_completed
         self.created_at = created_at
         self.order_index = order_index
@@ -39,16 +38,14 @@ class TaskModel(QAbstractListModel):
 
     @contextmanager
     def _get_db_connection(self):
-        """获取数据库连接，使用上下文管理器模式"""
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # 使结果可以通过列名访问
+        conn.row_factory = sqlite3.Row
         try:
             yield conn
         finally:
             conn.close()
 
     def _execute_query(self, query, params=(), fetch_all=False, commit=False):
-        """执行SQL查询并返回结果，减少代码重复"""
         with self._get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
@@ -203,14 +200,23 @@ class TaskModel(QAbstractListModel):
         if new_quadrant < 1 or new_quadrant > 4:
             return
         
-        # 更新象限并获取旧象限
-        success, old_quadrant = self._execute_query(
-            "UPDATE tasks SET quadrant = ? WHERE id = ? RETURNING quadrant",
-            (new_quadrant, task_id)
+        # 先获取旧的象限
+        old_quadrant_row = self._execute_query(
+            "SELECT quadrant FROM tasks WHERE id = ?", 
+            (task_id,)
         )
         
-        if not success or old_quadrant is None:
+        if not old_quadrant_row:
             return
+        
+        old_quadrant = old_quadrant_row['quadrant']
+        
+        # 更新象限
+        self._execute_query(
+            "UPDATE tasks SET quadrant = ? WHERE id = ?",
+            (new_quadrant, task_id),
+            commit=True
+        )
         
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):

@@ -53,13 +53,11 @@ class TaskController(QObject):
     
     @Slot(result='QVariant')
     def getAllTasks(self):
-        """获取所有任务列表"""
-        # 直接从模型获取所有任务，按象限组织
-        all_tasks = []
-        for quadrant in range(1, 5):
-            tasks = self.task_model.getTasksByQuadrant(quadrant)
-            all_tasks.extend(tasks)
-        return all_tasks
+        """获取所有任务列表
+        使用模型中添加的单次查询方法，提高效率
+        """
+        # 直接使用模型中添加的getAllTasks方法，避免多次数据库查询
+        return self.task_model.getAllTasks()
     
     @Slot(result='QVariant')
     def getCompletedTasks(self):

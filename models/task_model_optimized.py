@@ -200,14 +200,15 @@ class TaskModel(QAbstractListModel):
         )
         
         # 在模型中更新任务
+        task_found = False
         for i, task in enumerate(self.tasks):
             if task.id == task_id:
+                task_found = True
                 task.is_completed = completed
                 index = self.createIndex(i, 0)
                 self.dataChanged.emit(index, index, [self.IsCompletedRole])
                 
                 # 如果任务完成，从未完成任务列表中移除
-                # 注意：已完成任务列表中的任务不会受此影响，因为它们使用单独的getCompletedTasks方法获取
                 if completed:
                     self.beginRemoveRows(QModelIndex(), i, i)
                     self.tasks.pop(i)
@@ -215,16 +216,11 @@ class TaskModel(QAbstractListModel):
                     self.taskRemoved.emit()
                 break
         
-        # 无论任务是标记为完成还是未完成，都只需刷新未完成任务列表
-        # 已完成任务列表会通过taskUpdated信号在UI层面更新
-        if not completed:
+        # 如果任务被标记为未完成且存在于任务列表中，刷新未完成任务列表
+        if not completed and task_found:
             self.refreshTasks()
             # 确保发出信号通知UI更新
             self.taskAdded.emit()
-        
-        # 无论任务状态如何变化，都发出taskRemoved信号
-        # 这将触发控制器的taskUpdated信号，进而更新已完成任务列表
-        self.taskRemoved.emit()
     
     @Slot(int, str, str)
     def updateTask(self, task_id, title, description):
@@ -346,3 +342,26 @@ class TaskModel(QAbstractListModel):
             (new_order_index, task_id),
             commit=True
         )
+    
+    @Slot(result='QVariant')
+    def getAllTasks(self):
+        """获取所有未完成任务
+        使用单次查询获取所有任务，提高查询效率
+        """
+        rows = self._execute_query(
+            "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY quadrant, order_index ASC, created_at DESC",
+            fetch_all=True
+        )
+        
+        if not rows:
+            return []
+        
+        all_tasks = [{
+            'id': row['id'],
+            'title': row['title'],
+            'description': row['description'],
+            'quadrant': row['quadrant'],
+            'order_index': row['order_index']
+        } for row in rows]
+        
+        return all_tasks

@@ -1,146 +1,167 @@
-import QtQuick 2.15  // Qt Quick核心模块
-import QtQuick.Controls 2.15  // Qt Quick控件模块
-import QtQuick.Layouts 1.15  // 布局管理模块
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 
-// 任务项组件
-// 用于在列表中显示单个任务，包含任务信息和操作按钮
 Rectangle {
-    id: taskDelegate  // 组件ID
-    height: 80  // 固定高度
-    radius: 12  // 圆角半径
-    color: "white"  // 背景色
-    border.width: 0  // 无边框
+    id: taskItem
     
-    // 使用统一的阴影效果组件
-    ShadowEffect {
-        id: shadowEffect
-        offsetY: 3
-        blurRadius: 8.0
-        shadowColor: "#25000000"
-        animated: true
-        Component.onCompleted: applyTo(taskDelegate)
-    }
+    // 使用数据模型中实际返回的字段名
+    property int id: -1
+    property string title: ""
+    property string description: ""
+    property int quadrant: 1
+    property bool isCompleted: false
+    property color quadrantColor: "#4361ee"
     
-    // 渐变背景
-    Rectangle {
-        id: gradientBackground
-        anchors.fill: parent
-        radius: parent.radius
-        opacity: 0.05
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.lighter(Material.accent, 1.1) }
-            GradientStop { position: 1.0; color: "white" }
-        }
-    }
+    // 设置最小高度以确保足够的显示空间
+    implicitHeight: contentLayout.implicitHeight + 24
+    color: "white"
     
-    property int taskId: -1
-    property string taskTitle: ""
-    property string taskDescription: ""
-    property int taskQuadrant: 4
-    property bool taskCompleted: false
+    // 拖放相关属性
+    property bool dragActive: false
+    property point dragStart
     
-    Component.onCompleted: {
-        consoleLogger.log("TaskItem创建: ID=" + taskId + ", 标题=" + taskTitle)
-    }
-    
-    // 统一动画效果
-    Behavior on scale { NumberAnimation { duration: 150 } }
-    Behavior on opacity { NumberAnimation { duration: 150 } }
-    Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-    Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuad } }
-    
-    // 任务内容
     ColumnLayout {
+        id: contentLayout
         anchors.fill: parent
-        anchors.margins: 8
-        spacing: 4
+        anchors.margins: 12
+        spacing: 8
+        // 确保列布局不会溢出父容器
+        Layout.fillWidth: true
         
         RowLayout {
-            Layout.fillWidth: true
             spacing: 8
             
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
+            // 完成复选框
+            Rectangle {
+                id: checkbox
+                width: 20
+                height: 20
+                radius: 10
+                border.width: 2
+                border.color: quadrantColor
+                color: isCompleted ? quadrantColor : "white"
                 
-                Label {
-                    text: taskTitle
-                    font.pixelSize: 14
-                    font.bold: true
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                    taskController.setTaskCompleted(id, !isCompleted)
+                }
                 }
                 
-                // 任务描述标签
-                Label {
-                    text: taskDescription
+                Text {
+                    anchors.centerIn: parent
+                    text: "✓"
                     font.pixelSize: 12
-                    color: "#666666"
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                    visible: taskDescription && taskDescription.length > 0
-                    maximumLineCount: 1
+                    color: "white"
+                    visible: isCompleted
                 }
             }
             
-            // 完全重构CheckBox布局
-            Item {
-                // 使用Item作为容器，确保CheckBox垂直居中
-                Layout.preferredWidth: taskCheckBox.width + 10
-                Layout.fillHeight: true
+            // 任务标题
+            Text {
+                text: title || "(无标题任务)"
+                font.pixelSize: 16
+                font.weight: Font.Medium
+                // 使用更明显的颜色确保文本可见
+                color: isCompleted ? "#8d99ae" : "#2b2d42"
+                elide: Text.ElideRight
+                Layout.fillWidth: true
+                // 移除不支持的minimumWidth属性，Text组件不支持此属性
                 
-                CheckBox {
-                    id: taskCheckBox
-                    // 绑定到任务的完成状态属性
-                    checked: taskCompleted
-                    Component.onCompleted: {
-                        // 初始化时检查任务状态
-                        consoleLogger.log("初始化任务状态: ID=" + taskId + ", 完成状态=" + taskCompleted)
-                    }
+                MouseArea {
+                    anchors.fill: parent
                     onClicked: {
-                        consoleLogger.log("点击任务ID: " + taskId + " 状态: " + checked)
-                        if (taskId > 0) {
-                            consoleLogger.log("调用setTaskCompleted: " + taskId + ", " + checked)
-                            taskController.setTaskCompleted(taskId, checked)
-                        } else {
-                            consoleLogger.log("错误: 无效的任务ID")
+                        editTaskDialog.open(id, title, description, quadrant)
+                    }
+                }
+            }
+        }
+        
+        // 任务描述
+        Text {
+            text: description
+            font.pixelSize: 14
+            color: "#8d99ae"
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+            visible: description.length > 0
+        }
+        
+        // 操作按钮区域
+        RowLayout {
+            spacing: 8
+            
+            Item { Layout.fillWidth: true }
+            
+            // 移动按钮
+            Rectangle {
+                width: 28
+                height: 28
+                radius: 14
+                color: "#f8f9fa"
+                
+                MouseArea {
+                    anchors.fill: parent
+                    onPressed: {
+                        dragActive = true
+                        dragStart = Qt.point(mouseX, mouseY)
+                    }
+                    onReleased: {
+                        dragActive = false
+                    }
+                    onPositionChanged: {
+                        if (dragActive) {
+                            // 这里可以实现拖动功能
                         }
                     }
-                    anchors.centerIn: parent  // 在容器中完全居中
-                    
-                    enabled: true
-                    
-                    indicator: Rectangle {
-                        implicitWidth: 22
-                        implicitHeight: 22
-                        radius: 4
-                        // 简化颜色逻辑
-                        border.color: taskCheckBox.checked ? "#0078d4" : 
-                                     taskCheckBox.hovered ? "#666666" : "#999999"
-                        border.width: 1.5
-                        color: taskCheckBox.checked ? "#0078d4" : "transparent"
-                        
-                        // 添加过渡动画
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        
-                        Text {
-                            text: "✓"
-                            color: "white"
-                            anchors.centerIn: parent
-                            font.pixelSize: 14
-                            // 简化可见性和透明度逻辑
-                            visible: taskCheckBox.checked
-                            opacity: taskCheckBox.checked ? 1.0 : 0.0
-                            
-                            // 添加过渡动画
-                            Behavior on opacity { NumberAnimation { duration: 150 } }
-                        }
+                    cursorShape: Qt.OpenHandCursor
+                }
+                
+                Text {
+                    anchors.centerIn: parent
+                    text: "⋮⋮"
+                    font.pixelSize: 12
+                    color: "#8d99ae"
+                }
+            }
+            
+            // 编辑按钮
+            Rectangle {
+                width: 28
+                height: 28
+                radius: 14
+                color: "#f8f9fa"
+                
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        editTaskDialog.open(id, title, description, quadrant)
                     }
                 }
                 
-                // CheckBox已经有自己的鼠标处理，不需要额外的MouseArea
+                Text {
+                    anchors.centerIn: parent
+                    text: "✎"
+                    font.pixelSize: 12
+                    color: "#8d99ae"
+                }
             }
         }
     }
+    
+    // 悬停效果
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        
+        onEntered: {
+            taskItem.color = "#f8f9fa"
+        }
+        onExited: {
+            taskItem.color = "white"
+        }
+    }
+    
+    // 数据属性已在组件顶部定义
 }
