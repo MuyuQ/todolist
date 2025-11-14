@@ -11,110 +11,140 @@ Rectangle {
     property int taskQuadrant: 4
     property string createdAt: ""
     
-    // 使用implicitHeight代替固定高度计算以确保更好的布局适应
-    implicitHeight: contentLayout.implicitHeight + 24
-    color: "white"
+    // 现代化卡片设计
+    implicitHeight: contentLayout.implicitHeight + 32
+    width: parent ? parent.width : 400
+    
+    // 现代化圆角和颜色
+    radius: 16
+    color: "#ffffff"
+    
+    // 模拟阴影效果（使用边框颜色）
+    border.width: 1
+    border.color: "#e5e7eb"
+    
+    // 背景渐变效果
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: "#ffffff" }
+        GradientStop { position: 1.0; color: "#fafbfc" }
+    }
     
     ColumnLayout {
         id: contentLayout
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 8
+        anchors.margins: 20
+        spacing: 12
         
-        // 任务标题和完成标记
+        // 顶部区域：标题和完成状态
         RowLayout {
-            spacing: 8
+            spacing: 12
             
-            // 完成标记
+            // 现代化完成标记
             Rectangle {
-                width: 20
-                height: 20
-                radius: 10
-                color: "#4cc9f0"
+                width: 24
+                height: 24
+                radius: 12
+                color: "#22c55e"  // 绿色完成标记
+                border.width: 2
+                border.color: "#16a34a"
                 
+                // 完成图标
                 Text {
                     anchors.centerIn: parent
                     text: "✓"
-                    font.pixelSize: 12
+                    font.pixelSize: 14
+                    font.weight: Font.Bold
                     color: "white"
                 }
             }
             
-            // 任务标题
+            // 现代化任务标题
             Text {
                 text: taskTitle
-                font.pixelSize: 16
+                font.pixelSize: 18
                 font.weight: Font.Medium
-                color: "#8d99ae"
+                color: "#374151"  // 深灰蓝色
                 elide: Text.ElideRight
                 Layout.fillWidth: true
                 
-                // 划线效果
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 4
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: 1
-                    color: "#8d99ae"
-                }
+                // 现代化字体渲染
+                renderType: Text.NativeRendering
             }
         }
         
-        // 任务描述
+        // 任务描述（现代化样式）
         Text {
             text: taskDescription
-            font.pixelSize: 14
-            color: "#8d99ae"
+            font.pixelSize: 15
+            color: "#6b7280"  // 中性灰
             elide: Text.ElideRight
             Layout.fillWidth: true
             visible: taskDescription.length > 0
+            lineHeight: 1.4  // 增加行高，提升可读性
+            wrapMode: Text.WordWrap
         }
         
-        // 任务信息
+        // 底部信息栏（现代化设计）
+        Rectangle {
+            Layout.fillWidth: true
+            height: 1
+            color: "#f3f4f6"  // 浅灰色分割线
+            visible: true
+        }
+        
         RowLayout {
-            spacing: 16
+            spacing: 20
             
-            // 象限信息
-            RowLayout {
-                spacing: 4
+            // 象限标签（现代化设计）
+            Rectangle {
+                Layout.preferredWidth: 80
+                Layout.preferredHeight: 24
+                radius: 12
+                color: getQuadrantColor(taskQuadrant)
+                
+                // 象限图标
+                Rectangle {
+                    width: 16
+                    height: 16
+                    radius: 8
+                    anchors.left: parent.left
+                    anchors.leftMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: "#4dffffff"
+                }
                 
                 Text {
-                    text: qsTr("象限")
+                    anchors.centerIn: parent
+                    text: "Q" + taskQuadrant
                     font.pixelSize: 12
-                    color: "#adb5bd"
+                    font.weight: Font.Medium
+                    color: "white"
                 }
                 
-                Rectangle {
-                    width: 20
-                    height: 20
-                    radius: 4
-                    color: getQuadrantColor(taskQuadrant)
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Q" + taskQuadrant
-                        font.pixelSize: 10
-                        font.weight: Font.Medium
-                        color: "white"
-                    }
-                }
+                // 象限标签的轻微阴影（使用边框模拟）
+                border.width: 1
+                border.color: "#1a000000"
             }
             
-            // 创建时间
-            RowLayout {
-                spacing: 4
+            Item { Layout.fillWidth: true } // 弹性空间
+            
+            // 现代化时间标签（修复对齐问题）
+            Rectangle {
+                Layout.preferredWidth: 120  // 设置固定宽度防止超出
+                Layout.preferredHeight: 24
+                radius: 12
+                color: "#f9fafb"
+                border.width: 1
+                border.color: "#e5e7eb"
                 
                 Text {
-                    text: qsTr("创建于")
-                    font.pixelSize: 12
-                    color: "#adb5bd"
-                }
-                
-                Text {
+                    anchors.centerIn: parent
                     text: formatDate(createdAt)
                     font.pixelSize: 12
-                    color: "#adb5bd"
+                    color: "#6b7280"
+                    elide: Text.ElideRight  // 文本过长时截断
+                    horizontalAlignment: Text.AlignHCenter  // 水平居中对齐
+                    Layout.fillWidth: false
                 }
             }
         }

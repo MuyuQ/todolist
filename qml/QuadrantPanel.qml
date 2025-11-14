@@ -71,9 +71,21 @@ Rectangle {
             clip: true
             model: taskController.getTasksForQuadrant(quadrantNumber)
             delegate: TaskItem {
-                // 使用ListView.view.width而不是直接引用taskListView.width
                 width: ListView.view.width
+                
+                // 控制器返回字典数组，数据在model.modelData中
+                title: model.modelData ? model.modelData.title : ""
+                description: model.modelData ? model.modelData.description : ""
+                quadrant: model.modelData ? model.modelData.quadrant : 1
+                isCompleted: model.modelData ? model.modelData.isCompleted : false
                 quadrantColor: quadrantPanel.quadrantColor
+                
+                // 调试信息
+                Component.onCompleted: {
+                    console.log("TaskItem创建 - 标题:", title, "象限:", quadrant, "是否完成:", isCompleted)
+                    console.log("模型数据 - 原始model:", model)
+                    console.log("模型数据 - modelData:", model ? model.modelData : "无")
+                }
             }
             spacing: 1
             
@@ -133,11 +145,15 @@ Rectangle {
     Connections {
         target: taskController
         function onTaskUpdated() {
+            // 重新设置模型以获取最新任务数据
+            taskListView.model = taskController.getTasksForQuadrant(quadrantNumber)
             updateTaskCount()
         }
     }
     
     Component.onCompleted: {
+        // 初始设置模型
+        taskListView.model = taskController.getTasksForQuadrant(quadrantNumber)
         updateTaskCount()
     }
 }

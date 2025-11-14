@@ -180,9 +180,11 @@ Dialog {
             }
             
             onClicked: {
-                // 这里可以添加删除任务的逻辑
-                // 为了简化，我们暂时只关闭对话框
-                editTaskDialog.close()
+                if (taskId !== -1) {
+                    // 删除任务功能实现
+                    taskController.deleteTask(taskId)
+                    editTaskDialog.close()
+                }
             }
         }
         
@@ -288,7 +290,7 @@ Dialog {
         titleInput.text = title
         descriptionInput.text = description || ""
         selectedQuadrant = quadrant || 4
-        super.open()
+        editTaskDialog.open()
     }
     
     onOpened: {

@@ -105,6 +105,25 @@ ApplicationWindow {
                     onCheckedChanged: {
                         if (checked) {
                             mainStackView.replace(completedTasksPage)
+                            // 页面加载完成后延迟刷新已完成任务数据
+                            Qt.callLater(function() {
+                                // 延迟检查并更新已完成任务列表
+                                var checkAndRefresh = function() {
+                                    // 尝试获取当前页面的已完成任务列表
+                                    var currentItem = mainStackView.currentItem
+                                    if (currentItem && currentItem.children && currentItem.children.length > 0) {
+                                        // 查找已完成任务列表
+                                        for (var i = 0; i < currentItem.children.length; i++) {
+                                            var child = currentItem.children[i]
+                                            if (child.objectName === "completedTasksList") {
+                                                child.model = taskController.getCompletedTasks()
+                                                break
+                                            }
+                                        }
+                                    }
+                                }
+                                checkAndRefresh()
+                            })
                         }
                     }
                     
@@ -200,6 +219,9 @@ ApplicationWindow {
         
         Rectangle {
             color: "#f5f7fa"
+            
+            // 已完成任务列表数据源
+            property var completedTasksModel: taskController ? taskController.getCompletedTasks() : []
             
             ColumnLayout {
                 anchors.fill: parent
@@ -303,6 +325,16 @@ ApplicationWindow {
                             border.color: root.dangerColor
                             radius: 16
                         }
+                        
+                        // 清空按钮点击事件
+                        onClicked: {
+                            consoleLogger.log("清空按钮被点击")
+                            // 直接执行清空操作
+                            taskController.clearCompletedTasks()
+                            
+                            // 立即更新模型引用
+                            refreshCompletedTasksList()
+                        }
                     }
                 }
                 
@@ -317,6 +349,7 @@ ApplicationWindow {
                     
                     ListView {
                         id: completedTasksList
+                        objectName: "completedTasksList"
                         anchors.fill: parent
                         // 添加clip属性确保内容不会溢出
                         clip: true
@@ -324,6 +357,13 @@ ApplicationWindow {
                         delegate: CompletedTaskItem {
                             // 使用ListView.view.width而不是直接引用completedTasksList.width
                             width: ListView.view.width
+                            
+                            // 绑定model数据属性
+                            taskId: modelData.taskId
+                            taskTitle: modelData.taskTitle
+                            taskDescription: modelData.taskDescription
+                            taskQuadrant: modelData.taskQuadrant
+                            createdAt: modelData.createdAt
                         }
                         spacing: 1
                         
@@ -364,5 +404,82 @@ ApplicationWindow {
     // 初始化任务列表
     Component.onCompleted: {
         taskController.refreshTasks()
+        
+        // 监听任务更新信号，自动刷新已完成任务页面
+        taskController.taskUpdated.connect(refreshCompletedTasksList)
+        
+        // 定时器，用于强制刷新已完成任务列表
+        refreshTimer.start()
+    }
+    
+    // 定时器用于强制刷新
+    Timer {
+        id: refreshTimer
+        interval: 100
+        repeat: true
+        running: false
+        property int counter: 0
+        
+        onTriggered: {
+            if (completedTasksTab.checked) {
+                refreshCompletedTasksList()
+            }
+        }
+    }
+    
+    // 专门处理已完成任务列表刷新的函数
+    function refreshCompletedTasksList() {
+        consoleLogger.log("=== 任务更新信号被触发 ===")
+        
+        // 检查taskController是否可用
+        if (!taskController) {
+            consoleLogger.log("taskController不可用，跳过刷新")
+            return
+        }
+        
+        // 如果当前在已完成任务页面，强制刷新已完成任务列表
+        if (completedTasksTab.checked && mainStackView.currentItem) {
+            consoleLogger.log("当前在已完成任务页面，开始刷新列表")
+            
+            // 查找已完成任务列表并强制刷新model
+            var currentItem = mainStackView.currentItem
+            if (currentItem && currentItem.children && currentItem.children.length > 0) {
+                for (var i = 0; i < currentItem.children.length; i++) {
+                    var child = currentItem.children[i]
+                    if (child.objectName === "completedTasksList") {
+                        consoleLogger.log("找到已完成任务列表，准备刷新")
+                        
+                        // 获取新的数据并立即刷新
+                        if (taskController) {
+                            var newModel = taskController.getCompletedTasks()
+                            consoleLogger.log("获取到新数据，任务数量: " + newModel.length)
+                            
+                            // 强制更新ListView的model属性
+                            child.model = newModel
+                            child.forceLayout()
+                            child.update()
+                            
+                            // 尝试重新设置model属性
+                            Qt.callLater(function() {
+                                if (child && child.objectName === "completedTasksList" && taskController) {
+                                    var newModelAgain = taskController.getCompletedTasks()
+                                    consoleLogger.log("延迟刷新，任务数量: " + newModelAgain.length)
+                                    child.model = newModelAgain
+                                    child.forceLayout()
+                                    child.update()
+                                }
+                            })
+                        }
+                        
+                        consoleLogger.log("已完成任务列表刷新完成")
+                        break
+                    }
+                }
+            } else {
+                consoleLogger.log("无法找到已完成任务页面的子组件")
+            }
+        } else {
+            consoleLogger.log("不在已完成任务页面，不刷新列表")
+        }
     }
 }

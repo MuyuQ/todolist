@@ -5,13 +5,23 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: taskItem
     
-    // 使用数据模型中实际返回的字段名
-    property int id: -1
+    // QAbstractListModel角色数据在QML delegate中直接可用
+    // 在QML中，对于QAbstractListModel的delegate，模型数据直接作为属性访问
+    // id、title、description等属性将自动从模型的角色数据中获取值
     property string title: ""
     property string description: ""
     property int quadrant: 1
     property bool isCompleted: false
     property color quadrantColor: "#4361ee"
+    
+    // 调试信息
+    Component.onCompleted: {
+        console.log("TaskItem创建 - 标题:", title, "从四象限:", quadrant, "是否完成:", isCompleted)
+    }
+    
+    onTitleChanged: {
+        console.log("TaskItem标题变化 - 新标题:", title)
+    }
     
     // 设置最小高度以确保足够的显示空间
     implicitHeight: contentLayout.implicitHeight + 24
@@ -45,8 +55,9 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                    taskController.setTaskCompleted(id, !isCompleted)
-                }
+                        // 控制器返回字典数组，任务ID在model.modelData.id中
+                        taskController.setTaskCompleted(model.modelData.id, !isCompleted)
+                    }
                 }
                 
                 Text {
@@ -72,7 +83,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        editTaskDialog.open(id, title, description, quadrant)
+                        // 控制器返回字典数组，任务ID在model.modelData.id中
+                        editTaskDialog.open(model.modelData.id, title, description, quadrant)
                     }
                 }
             }
@@ -136,7 +148,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        editTaskDialog.open(id, title, description, quadrant)
+                        // 控制器返回字典数组，任务ID在model.modelData.id中
+                        editTaskDialog.open(model.modelData.id, title, description, quadrant)
                     }
                 }
                 
@@ -152,14 +165,22 @@ Rectangle {
     
     // 悬停效果
     MouseArea {
+        // 不覆盖子元素，启用鼠标事件传递
         anchors.fill: parent
         hoverEnabled: true
+        // 避免事件冲突，不处理点击事件
+        propagateComposedEvents: true
         
         onEntered: {
             taskItem.color = "#f8f9fa"
         }
         onExited: {
             taskItem.color = "white"
+        }
+        // 只处理鼠标悬停，不处理点击
+        onClicked: {
+            // 不阻止事件传播给子元素
+            mouse.accepted = false
         }
     }
     

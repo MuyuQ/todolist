@@ -49,7 +49,10 @@ class TaskController(QObject):
     @Slot(int, result='QVariant')
     def getTasksForQuadrant(self, quadrant):
         """获取指定象限的任务列表"""
-        return self.task_model.getTasksByQuadrant(quadrant)
+        tasks = self.task_model.getTasksByQuadrant(quadrant)
+        # 添加调试日志
+        print(f"控制器 - getTasksForQuadrant({quadrant}) 返回 {len(tasks)} 个任务")
+        return tasks
     
     @Slot(result='QVariant')
     def getAllTasks(self):
@@ -68,4 +71,16 @@ class TaskController(QObject):
     def updateTaskOrder(self, task_id, new_order_index):
         """更新任务排序"""
         self.task_model.updateTaskOrder(task_id, new_order_index)
+        self._emit_update()
+    
+    @Slot(int)
+    def deleteTask(self, task_id):
+        """删除任务"""
+        self.task_model.deleteTask(task_id)
+        self._emit_update()
+    
+    @Slot()
+    def clearCompletedTasks(self):
+        """清空所有已完成任务"""
+        self.task_model.clearCompletedTasks()
         self._emit_update()

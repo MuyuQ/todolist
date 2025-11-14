@@ -288,18 +288,27 @@ class TaskModel(QAbstractListModel):
         if not rows:
             return []
         
+        # 确保返回的字段名与QML组件中定义的属性名完全匹配
         filtered_tasks = [{
+            # 使用与QML组件属性完全匹配的字段名
             'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
+            'title': str(row['title']) if row['title'] is not None else "(无标题任务)",
+            'description': str(row['description']) if row['description'] is not None else "",
             'quadrant': row['quadrant'],
-            'order_index': row['order_index']
+            'isCompleted': bool(row['is_completed']),
+            'quadrantColor': "#4361ee"  # 添加默认象限颜色
         } for row in list(rows)]
+        
+        # 添加调试日志
+        print(f"模型 - getTasksByQuadrant({quadrant}) 返回 {len(filtered_tasks)} 个任务")
+        for task in filtered_tasks:
+            print(f"  任务ID: {task['id']}, 标题: '{task['title']}'")
+        
         return filtered_tasks
         
     @Slot(result='QVariant')
     def getCompletedTasks(self):
-        # 获取已完成的任务
+        # 获取所有已完成任务，按创建时间倒序排列
         rows = self._execute_query(
             "SELECT * FROM tasks WHERE is_completed = 1 ORDER BY created_at DESC",
             fetch_all=True
@@ -308,13 +317,17 @@ class TaskModel(QAbstractListModel):
         if not rows:
             return []
         
+        # 确保返回的字段名与QML组件中定义的属性名完全匹配
         completed_tasks = [{
-            'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
-            'quadrant': row['quadrant'],
-            'created_at': row['created_at']
-        } for row in rows]
+            'taskId': row['id'],
+            'taskTitle': str(row['title']) if row['title'] is not None else "(无标题任务)",
+            'taskDescription': str(row['description']) if row['description'] is not None else "",
+            'taskQuadrant': row['quadrant'],
+            'isCompleted': bool(row['is_completed']),
+            'createdAt': row['created_at'],
+            'quadrantColor': "#4361ee"  # 添加默认象限颜色
+        } for row in list(rows)]
+        
         return completed_tasks
     
     @Slot()
@@ -345,23 +358,53 @@ class TaskModel(QAbstractListModel):
     
     @Slot(result='QVariant')
     def getAllTasks(self):
-        """获取所有未完成任务
-        使用单次查询获取所有任务，提高查询效率
-        """
+        # 获取所有任务（不包括已完成任务），按象限和order_index排序
         rows = self._execute_query(
-            "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY quadrant, order_index ASC, created_at DESC",
+            "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY quadrant ASC, order_index ASC, created_at DESC",
             fetch_all=True
         )
         
         if not rows:
             return []
         
+        # 确保返回的字段名与QML组件中定义的属性名完全匹配
         all_tasks = [{
             'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
+            'title': str(row['title']) if row['title'] is not None else "(无标题任务)",
+            'description': str(row['description']) if row['description'] is not None else "",
             'quadrant': row['quadrant'],
-            'order_index': row['order_index']
-        } for row in rows]
+            'isCompleted': bool(row['is_completed']),
+            'quadrantColor': "#4361ee"  # 添加默认象限颜色
+        } for row in list(rows)]
         
         return all_tasks
+    
+    @Slot(int)
+    def deleteTask(self, task_id):
+        """删除任务"""
+        # 从数据库中删除任务
+        self._execute_query(
+            "DELETE FROM tasks WHERE id = ?",
+            (task_id,),
+            commit=True
+        )
+        
+        # 从模型中删除任务
+        for i, task in enumerate(self.tasks):
+            if task.id == task_id:
+                self.beginRemoveRows(QModelIndex(), i, i)
+                self.tasks.pop(i)
+                self.endRemoveRows()
+                self.taskRemoved.emit()
+                break
+    
+    @Slot()
+    def clearCompletedTasks(self):
+        """清空所有已完成任务"""
+        # 从数据库中删除所有已完成任务
+        self._execute_query(
+            "DELETE FROM tasks WHERE is_completed = 1",
+            commit=True
+        )
+        
+        print("所有已完成任务已清空")

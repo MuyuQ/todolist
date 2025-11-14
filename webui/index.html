@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>四象限任务管理</title>
+  <style>
+    :root { --primary:#4361ee; --secondary:#3f37c9; --accent:#4cc9f0; --success:#4cc9f0; --warning:#f72585; --danger:#ef233c; --light:#f8f9fa; --dark:#1a1a2e; --text:#2b2d42; --textLight:#8d99ae; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#f5f7fa; color:var(--text); font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif; }
+    header { height:64px; background:#fff; display:flex; align-items:center; gap:16px; padding:0 16px; border-bottom:1px solid #e9ecef; }
+    .logo { width:32px; height:32px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; }
+    .title { font-size:20px; font-weight:600; color:var(--dark); }
+    .spacer { flex:1; }
+    .tabs { display:flex; gap:4px; }
+    .tab { position:relative; padding:8px 12px; font-size:14px; color:var(--textLight); cursor:pointer; }
+    .tab.active { color:var(--primary); }
+    .tab.active::after { content:""; position:absolute; left:0; right:0; bottom:0; height:2px; background:var(--primary); }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:none; border-radius:18px; background:var(--primary); color:#fff; cursor:pointer; }
+    main { padding:24px; }
+    .grid { display:grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap:20px; min-height: calc(100vh - 64px - 48px); }
+    .panel { background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:16px; display:flex; flex-direction:column; }
+    .panel .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .pill { padding:4px 10px; border-radius:999px; color:#fff; font-size:12px; }
+    .list { overflow:auto; display:flex; flex-direction:column; gap:8px; }
+    .item { border:1px solid #e9ecef; border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:space-between; }
+    .item .meta { display:flex; flex-direction:column; }
+    .danger { color:var(--danger); }
+    .outline { background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:16px; padding:6px 12px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">📝</div>
+    <div class="title">四象限任务管理</div>
+    <div class="spacer"></div>
+    <div class="tabs">
+      <div class="tab active" id="tab-active">活动任务</div>
+      <div class="tab" id="tab-completed">已完成任务</div>
+    </div>
+    <button class="btn" id="btn-add"><span>+</span><span>添加任务</span></button>
+  </header>
+  <main>
+    <section id="page-active">
+      <h2 style="font-size:24px; font-weight:600; color:var(--dark);">四象限任务管理</h2>
+      <div class="grid">
+        <div class="panel" data-q="1">
+          <div class="head"><div>重要且紧急</div><div class="pill" style="background:var(--danger)">Q1</div></div>
+          <div class="list" id="list-q1"></div>
+        </div>
+        <div class="panel" data-q="2">
+          <div class="head"><div>重要不紧急</div><div class="pill" style="background:var(--warning)">Q2</div></div>
+          <div class="list" id="list-q2"></div>
+        </div>
+        <div class="panel" data-q="3">
+          <div class="head"><div>不重要但紧急</div><div class="pill" style="background:var(--accent)">Q3</div></div>
+          <div class="list" id="list-q3"></div>
+        </div>
+        <div class="panel" data-q="4">
+          <div class="head"><div>不重要不紧急</div><div class="pill" style="background:var(--textLight)">Q4</div></div>
+          <div class="list" id="list-q4"></div>
+        </div>
+      </div>
+    </section>
+    <section id="page-completed" style="display:none;">
+      <div style="display:flex; align-items:center;">
+        <h2 style="font-size:24px; font-weight:600; color:var(--dark);">已完成任务</h2>
+        <div class="spacer"></div>
+        <button class="outline" id="btn-clear">清空</button>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="list" id="list-completed"></div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const tabActive = document.getElementById('tab-active');
+    const tabCompleted = document.getElementById('tab-completed');
+    const pageActive = document.getElementById('page-active');
+    const pageCompleted = document.getElementById('page-completed');
+    function switchTab(active) { if (active === 'active') { tabActive.classList.add('active'); tabCompleted.classList.remove('active'); pageActive.style.display='block'; pageCompleted.style.display='none'; } else { tabCompleted.classList.add('active'); tabActive.classList.remove('active'); pageActive.style.display='none'; pageCompleted.style.display='block'; loadCompleted(); } }
+    tabActive.onclick=()=>switchTab('active'); tabCompleted.onclick=()=>switchTab('completed');
+
+    async function loadAll() {
+      const res = await fetch('/api/tasks');
+      const items = await res.json();
+      const buckets = {1:[],2:[],3:[],4:[]};
+      items.forEach(t=>{ (buckets[t.quadrant]||[]).push(t); });
+      for (let q=1; q<=4; q++) {
+        const list = document.getElementById('list-q'+q);
+        list.innerHTML = '';
+        (buckets[q]||[]).forEach(t=>{
+          const el = document.createElement('div');
+          el.className='item';
+          el.innerHTML = `<div class="meta"><div style="font-weight:600">${t.title||'(无标题任务)'}</div><div style="color:var(--textLight); font-size:12px;">${t.description||''}</div></div><div style="display:flex; gap:8px;"><button class="outline" data-id="${t.id}" data-q="${q}">移动</button><button class="outline" data-done="${t.id}">完成</button></div>`;
+          el.querySelector('[data-id]')?.addEventListener('click', async (e)=>{
+            const id = Number(e.target.getAttribute('data-id'));
+            const nq = Number(prompt('移动到象限(1-4):', String(q))||q);
+            if (nq>=1 && nq<=4) { await fetch(`/api/tasks/${id}/quadrant`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ quadrant: nq }) }); loadAll(); }
+          });
+          el.querySelector('[data-done]')?.addEventListener('click', async (e)=>{
+            const id = Number(e.target.getAttribute('data-done'));
+            await fetch(`/api/tasks/${id}/complete`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ completed: true }) });
+            loadAll();
+          });
+          list.appendChild(el);
+        });
+      }
+    }
+
+    async function loadCompleted() {
+      const res = await fetch('/api/tasks/completed');
+      const items = await res.json();
+      const list = document.getElementById('list-completed');
+      list.innerHTML='';
+      items.forEach(t=>{
+        const el = document.createElement('div');
+        el.className='item';
+        el.innerHTML = `<div class="meta"><div style="font-weight:600">${t.title||t.taskTitle||'(无标题任务)'}</div><div style="color:var(--textLight); font-size:12px;">${t.description||t.taskDescription||''}</div></div><div><span class="danger">完成</span></div>`;
+        list.appendChild(el);
+      });
+    }
+
+    document.getElementById('btn-add').onclick = async ()=>{
+      const title = prompt('任务标题:');
+      if (!title) return;
+      const description = prompt('任务描述:')||'';
+      const q = Number(prompt('象限(1-4):', '4')||'4');
+      await fetch('/api/tasks', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, description, quadrant:q }) });
+      loadAll();
+    };
+
+    document.getElementById('btn-clear').onclick = async ()=>{ await fetch('/api/tasks/completed', { method:'DELETE' }); loadCompleted(); };
+
+    loadAll();
+  </script>
+</body>
+</html>
