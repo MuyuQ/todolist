@@ -1,10 +1,29 @@
-from PySide6.QtCore import QObject, Signal, Property, Slot, QAbstractListModel, QModelIndex, Qt, QByteArray
+from PySide6.QtCore import (
+    QObject,
+    Signal,
+    Property,
+    Slot,
+    QAbstractListModel,
+    QModelIndex,
+    Qt,
+    QByteArray,
+)
 import sqlite3
 import os
 from contextlib import contextmanager
 
+
 class Task:
-    def __init__(self, id=None, title="", description="", quadrant=4, is_completed=False, created_at=None, order_index=0):
+    def __init__(
+        self,
+        id=None,
+        title="",
+        description="",
+        quadrant=4,
+        is_completed=False,
+        created_at=None,
+        order_index=0,
+    ):
         self.id = id
         self.title = title
         self.description = description
@@ -12,6 +31,7 @@ class Task:
         self.is_completed = is_completed
         self.created_at = created_at
         self.order_index = order_index
+
 
 class TaskModel(QAbstractListModel):
     # 定义角色
@@ -22,17 +42,20 @@ class TaskModel(QAbstractListModel):
     IsCompletedRole = Qt.UserRole + 5
     CreatedAtRole = Qt.UserRole + 6
     OrderIndexRole = Qt.UserRole + 7
-    
+
     # 信号
     dataChanged = Signal(QModelIndex, QModelIndex, list)
     taskAdded = Signal()
     taskRemoved = Signal()
     taskMoved = Signal(int, int, arguments=["oldQuadrant", "newQuadrant"])
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.tasks = []
-        self.db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "tasks.db")
+        self._quadrant_cache = {}  # 缓存象限任务
+        self.db_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "data", "tasks.db"
+        )
         self.init_database()
         self.load_tasks()
 
@@ -49,11 +72,11 @@ class TaskModel(QAbstractListModel):
         with self._get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
-            
+
             if commit:
                 conn.commit()
                 return cursor.lastrowid if cursor.lastrowid else True
-            
+
             if fetch_all:
                 return cursor.fetchall()
             else:
@@ -64,13 +87,13 @@ class TaskModel(QAbstractListModel):
         data_dir = os.path.dirname(self.db_path)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
-        
+
         # 创建数据库连接和表
         with self._get_db_connection() as conn:
             cursor = conn.cursor()
-            
+
             # 创建任务表
-            cursor.execute('''
+            cursor.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -80,60 +103,79 @@ class TaskModel(QAbstractListModel):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 order_index INTEGER DEFAULT 0
             )
-            ''')
-            
+            """)
+
             # 检查是否需要添加order_index列
             cursor.execute("PRAGMA table_info(tasks)")
             columns = cursor.fetchall()
-            has_order_index = any(column[1] == 'order_index' for column in columns)
-            
+            has_order_index = any(column[1] == "order_index" for column in columns)
+
             if not has_order_index:
-                cursor.execute("ALTER TABLE tasks ADD COLUMN order_index INTEGER DEFAULT 0")
-            
+                cursor.execute(
+                    "ALTER TABLE tasks ADD COLUMN order_index INTEGER DEFAULT 0"
+                )
+
+            # 添加索引以优化查询性能
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_completed ON tasks(is_completed)"
+            )
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quadrant ON tasks(quadrant)")
+
             conn.commit()
 
     def load_tasks(self):
         # 从数据库加载任务
         rows = self._execute_query(
             "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY created_at DESC",
-            fetch_all=True
+            fetch_all=True,
         )
-        
+
         self.beginResetModel()
         self.tasks = []
+        self._quadrant_cache = {1: [], 2: [], 3: [], 4: []}  # 重置缓存
         if rows:
             for row in rows:
                 task = Task(
-                    id=row['id'],
-                    title=row['title'],
-                    description=row['description'],
-                    quadrant=row['quadrant'],
-                    is_completed=row['is_completed'],
-                    created_at=row['created_at'],
-                    order_index=row['order_index']
+                    id=row["id"],
+                    title=row["title"],
+                    description=row["description"],
+                    quadrant=row["quadrant"],
+                    is_completed=row["is_completed"],
+                    created_at=row["created_at"],
+                    order_index=row["order_index"],
                 )
                 self.tasks.append(task)
+                # 填充缓存
+                if task.quadrant in self._quadrant_cache:
+                    self._quadrant_cache[task.quadrant].append(
+                        {
+                            "id": task.id,
+                            "title": task.title,
+                            "description": task.description,
+                            "quadrant": task.quadrant,
+                            "order_index": task.order_index,
+                        }
+                    )
         self.endResetModel()
 
     @Slot(str, str, int, result=bool)
     def addTask(self, title, description, quadrant=4):
         if not title.strip():
             return False
-        
+
         # 插入任务到数据库
         task_id = self._execute_query(
             "INSERT INTO tasks (title, description, quadrant) VALUES (?, ?, ?)",
             (title, description, quadrant),
-            commit=True
+            commit=True,
         )
-        
+
         # 获取创建时间
         created_at_row = self._execute_query(
-            "SELECT created_at FROM tasks WHERE id = ?", 
-            (task_id,)
+            "SELECT created_at FROM tasks WHERE id = ?", (task_id,)
         )
-        created_at = created_at_row['created_at'] if created_at_row else None
-        
+        created_at = created_at_row["created_at"] if created_at_row else None
+
         # 添加到模型
         self.beginInsertRows(QModelIndex(), 0, 0)
         new_task = Task(
@@ -142,11 +184,22 @@ class TaskModel(QAbstractListModel):
             description=description,
             quadrant=quadrant,
             is_completed=False,
-            created_at=created_at
+            created_at=created_at,
         )
         self.tasks.insert(0, new_task)  # 添加到列表开头
         self.endInsertRows()
-        
+
+        # 更新缓存
+        task_dict = {
+            "id": new_task.id,
+            "title": new_task.title,
+            "description": new_task.description,
+            "quadrant": new_task.quadrant,
+            "order_index": new_task.order_index,
+        }
+        self._quadrant_cache[quadrant].append(task_dict)
+        self._quadrant_cache[quadrant].sort(key=lambda x: x["order_index"])
+
         self.taskAdded.emit()
         return True
 
@@ -156,7 +209,7 @@ class TaskModel(QAbstractListModel):
         self._execute_query(
             "UPDATE tasks SET is_completed = ? WHERE id = ?",
             (1 if completed else 0, task_id),
-            commit=True
+            commit=True,
         )
 
         # 在模型中更新任务
@@ -165,9 +218,15 @@ class TaskModel(QAbstractListModel):
                 task.is_completed = completed
                 index = self.createIndex(i, 0)
                 self.dataChanged.emit(index, index, [self.IsCompletedRole])
-                
+
                 # 如果任务完成，从列表中移除
                 if completed:
+                    # 从缓存中移除
+                    quadrant = task.quadrant
+                    for t in self._quadrant_cache[quadrant]:
+                        if t["id"] == task_id:
+                            self._quadrant_cache[quadrant].remove(t)
+                            break
                     self.beginRemoveRows(QModelIndex(), i, i)
                     self.tasks.pop(i)
                     self.endRemoveRows()
@@ -178,46 +237,47 @@ class TaskModel(QAbstractListModel):
     def updateTask(self, task_id, title, description):
         if not title.strip():
             return
-        
+
         # 在数据库中更新任务
         self._execute_query(
             "UPDATE tasks SET title = ?, description = ? WHERE id = ?",
             (title, description, task_id),
-            commit=True
+            commit=True,
         )
-        
+
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):
             if task.id == task_id:
                 task.title = title
                 task.description = description
                 index = self.createIndex(i, 0)
-                self.dataChanged.emit(index, index, [self.TitleRole, self.DescriptionRole])
+                self.dataChanged.emit(
+                    index, index, [self.TitleRole, self.DescriptionRole]
+                )
                 break
 
     @Slot(int, int)
     def moveTaskToQuadrant(self, task_id, new_quadrant):
         if new_quadrant < 1 or new_quadrant > 4:
             return
-        
+
         # 先获取旧的象限
         old_quadrant_row = self._execute_query(
-            "SELECT quadrant FROM tasks WHERE id = ?", 
-            (task_id,)
+            "SELECT quadrant FROM tasks WHERE id = ?", (task_id,)
         )
-        
+
         if not old_quadrant_row:
             return
-        
-        old_quadrant = old_quadrant_row['quadrant']
-        
+
+        old_quadrant = old_quadrant_row["quadrant"]
+
         # 更新象限
         self._execute_query(
             "UPDATE tasks SET quadrant = ? WHERE id = ?",
             (new_quadrant, task_id),
-            commit=True
+            commit=True,
         )
-        
+
         # 在模型中更新任务
         for i, task in enumerate(self.tasks):
             if task.id == task_id:
@@ -227,45 +287,47 @@ class TaskModel(QAbstractListModel):
                 self.taskMoved.emit(old_quadrant, new_quadrant)
                 break
 
-    @Slot(int, result='QVariant')
-    def getTasksByQuadrant(self, quadrant):
-        # 获取指定象限的任务，并按order_index排序
-        rows = self._execute_query(
-            "SELECT * FROM tasks WHERE quadrant = ? ORDER BY order_index",
-            (quadrant,),
-            fetch_all=True
-        )
-        
-        if not rows:
-            return []
-        
-        filtered_tasks = [{
-            'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
-            'quadrant': row['quadrant'],
-            'order_index': row['order_index']
-        } for row in rows]
-        return filtered_tasks
+        # 更新缓存：从旧象限移除，添加到新象限
+        task_dict = None
+        for t in self._quadrant_cache[old_quadrant]:
+            if t["id"] == task_id:
+                task_dict = t
+                break
+        if task_dict:
+            self._quadrant_cache[old_quadrant].remove(task_dict)
+            task_dict["quadrant"] = new_quadrant
+            self._quadrant_cache[new_quadrant].append(task_dict)
+            self._quadrant_cache[new_quadrant].sort(key=lambda x: x["order_index"])
 
-    @Slot(result='QVariant')
+    @Slot(int, result="QVariant")
+    def getTasksByQuadrant(self, quadrant):
+        # 从缓存获取指定象限的任务
+        if quadrant in self._quadrant_cache:
+            return sorted(
+                self._quadrant_cache[quadrant], key=lambda x: x["order_index"]
+            )
+        return []
+
+    @Slot(result="QVariant")
     def getCompletedTasks(self):
         # 获取已完成的任务
         rows = self._execute_query(
-            "SELECT * FROM tasks WHERE is_completed = 1",
-            fetch_all=True
+            "SELECT * FROM tasks WHERE is_completed = 1", fetch_all=True
         )
-        
+
         if not rows:
             return []
-        
-        completed_tasks = [{
-            'id': row['id'],
-            'title': row['title'],
-            'description': row['description'],
-            'quadrant': row['quadrant'],
-            'created_at': row['created_at']
-        } for row in rows]
+
+        completed_tasks = [
+            {
+                "id": row["id"],
+                "title": row["title"],
+                "description": row["description"],
+                "quadrant": row["quadrant"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
         return completed_tasks
 
     @Slot()
@@ -276,12 +338,12 @@ class TaskModel(QAbstractListModel):
     def updateTaskOrder(self, task_id, new_order_index):
         if new_order_index < 0:
             return
-        
+
         # 更新排序索引
         self._execute_query(
             "UPDATE tasks SET order_index = ? WHERE id = ?",
             (new_order_index, task_id),
-            commit=True
+            commit=True,
         )
 
     def rowCount(self, parent=QModelIndex()):
@@ -289,22 +351,22 @@ class TaskModel(QAbstractListModel):
 
     def roleNames(self):
         roles = {
-            self.IdRole: QByteArray(b'id'),
-            self.TitleRole: QByteArray(b'title'),
-            self.DescriptionRole: QByteArray(b'description'),
-            self.QuadrantRole: QByteArray(b'quadrant'),
-            self.IsCompletedRole: QByteArray(b'isCompleted'),
-            self.CreatedAtRole: QByteArray(b'createdAt'),
-            self.OrderIndexRole: QByteArray(b'orderIndex')
+            self.IdRole: QByteArray(b"id"),
+            self.TitleRole: QByteArray(b"title"),
+            self.DescriptionRole: QByteArray(b"description"),
+            self.QuadrantRole: QByteArray(b"quadrant"),
+            self.IsCompletedRole: QByteArray(b"isCompleted"),
+            self.CreatedAtRole: QByteArray(b"createdAt"),
+            self.OrderIndexRole: QByteArray(b"orderIndex"),
         }
         return roles
 
     def data(self, index, role=Qt.DisplayRole):
         if not index.isValid() or index.row() >= len(self.tasks):
             return None
-        
+
         task = self.tasks[index.row()]
-        
+
         if role == self.IdRole:
             return task.id
         elif role == self.TitleRole:
@@ -319,5 +381,5 @@ class TaskModel(QAbstractListModel):
             return task.created_at
         elif role == self.OrderIndexRole:
             return task.order_index
-        
+
         return None

@@ -1,10 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Shapes 1.15
 
 Rectangle {
     id: taskItem
-    
+
     // QAbstractListModel角色数据在QML delegate中直接可用
     // 在QML中，对于QAbstractListModel的delegate，模型数据直接作为属性访问
     // id、title、description等属性将自动从模型的角色数据中获取值
@@ -12,7 +13,29 @@ Rectangle {
     property string description: ""
     property int quadrant: 1
     property bool isCompleted: false
-    property color quadrantColor: "#4361ee"
+    property color quadrantColor: "#6750a4"
+
+    // 动画属性
+    property real animationProgress: 0
+
+    onIsCompletedChanged: {
+        if (isCompleted) {
+            strikeAnimation.start()
+            progressAnimation.start()
+        } else {
+            animationProgress = 0
+        }
+    }
+
+    NumberAnimation {
+        id: progressAnimation
+        target: taskItem
+        property: "animationProgress"
+        from: 0
+        to: 1
+        duration: 500
+        easing.type: Easing.InOutQuad
+    }
     
     // 调试信息
     Component.onCompleted: {
@@ -26,6 +49,19 @@ Rectangle {
     // 设置最小高度以确保足够的显示空间
     implicitHeight: contentLayout.implicitHeight + 24
     color: "white"
+
+    // 淡入动画
+    opacity: 0
+    NumberAnimation on opacity {
+        from: 0
+        to: 1
+        duration: 300
+        easing.type: Easing.InOutQuad
+    }
+
+    Component.onCompleted: {
+        opacity = 1
+    }
     
     // 拖放相关属性
     property bool dragActive: false
@@ -70,21 +106,52 @@ Rectangle {
             }
             
             // 任务标题
-            Text {
-                text: title || "(无标题任务)"
-                font.pixelSize: 16
-                font.weight: Font.Medium
-                // 使用更明显的颜色确保文本可见
-                color: isCompleted ? "#8d99ae" : "#2b2d42"
-                elide: Text.ElideRight
+            Item {
                 Layout.fillWidth: true
-                // 移除不支持的minimumWidth属性，Text组件不支持此属性
-                
-                MouseArea {
+                height: titleText.implicitHeight
+
+                Text {
+                    id: titleText
+                    text: title || "(无标题任务)"
+                    font.pixelSize: 16
+                    font.weight: Font.Medium
+                    // 使用更明显的颜色确保文本可见
+                    color: isCompleted ? "#79747e" : "#1d1b20"
+                    elide: Text.ElideRight
                     anchors.fill: parent
-                    onClicked: {
-                        // 控制器返回字典数组，任务ID在model.modelData.id中
-                        editTaskDialog.open(model.modelData.id, title, description, quadrant)
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            // 控制器返回字典数组，任务ID在model.modelData.id中
+                            editTaskDialog.open(model.modelData.id, title, description, quadrant)
+                        }
+                    }
+                }
+
+                // 完成划线动画
+                Shape {
+                    id: strikeThrough
+                    anchors.fill: titleText
+                    visible: isCompleted
+
+                    ShapePath {
+                        strokeColor: "#79747e"
+                        strokeWidth: 2
+                        startX: 0
+                        startY: titleText.height / 2
+                        PathLine {
+                            x: strikeThrough.width * animationProgress
+                            y: titleText.height / 2
+                        }
+                    }
+
+                    NumberAnimation on opacity {
+                        id: strikeAnimation
+                        from: 0
+                        to: 1
+                        duration: 300
+                        easing.type: Easing.InOutQuad
                     }
                 }
             }
@@ -172,10 +239,10 @@ Rectangle {
         propagateComposedEvents: true
         
         onEntered: {
-            taskItem.color = "#f8f9fa"
+            taskItem.color = "#e7e0ec"
         }
         onExited: {
-            taskItem.color = "white"
+            taskItem.color = "#fffbfe"
         }
         // 只处理鼠标悬停，不处理点击
         onClicked: {

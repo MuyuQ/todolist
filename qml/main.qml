@@ -10,19 +10,31 @@ ApplicationWindow {
     width: 1200
     height: 800
     title: qsTr("四象限任务管理")
-    color: "#f5f7fa"
+    color: root.backgroundColor
     
-    // 定义应用主题颜色
-    readonly property color primaryColor: "#4361ee"
-    readonly property color secondaryColor: "#3f37c9"
-    readonly property color accentColor: "#4cc9f0"
-    readonly property color successColor: "#4cc9f0"
-    readonly property color warningColor: "#f72585"
-    readonly property color dangerColor: "#ef233c"
-    readonly property color lightColor: "#f8f9fa"
-    readonly property color darkColor: "#1a1a2e"
-    readonly property color textColor: "#2b2d42"
-    readonly property color textLightColor: "#8d99ae"
+    // 定义Material Design 3主题颜色
+    readonly property color primaryColor: "#6750a4"
+    readonly property color primaryContainer: "#eaddff"
+    readonly property color secondaryColor: "#625b71"
+    readonly property color secondaryContainer: "#e8def8"
+    readonly property color tertiaryColor: "#7d5260"
+    readonly property color tertiaryContainer: "#ffd8e4"
+    readonly property color errorColor: "#ba1a1a"
+    readonly property color errorContainer: "#ffdad6"
+    readonly property color outlineColor: "#79747e"
+    readonly property color surfaceColor: "#fffbfe"
+    readonly property color surfaceVariant: "#e7e0ec"
+    readonly property color backgroundColor: "#fffbfe"
+    readonly property color onPrimary: "#ffffff"
+    readonly property color onSecondary: "#ffffff"
+    readonly property color onTertiary: "#ffffff"
+    readonly property color onError: "#ffffff"
+    readonly property color onSurface: "#1d1b20"
+    readonly property color onSurfaceVariant: "#49454f"
+    readonly property color onBackground: "#1d1b20"
+    readonly property color inverseSurface: "#322f35"
+    readonly property color inverseOnSurface: "#f5eff7"
+    readonly property color inversePrimary: "#d0bcff"
     
     // 顶部导航栏
     header: Rectangle {
@@ -249,34 +261,34 @@ ApplicationWindow {
                     QuadrantPanel {
                         quadrantNumber: 1
                         quadrantTitle: qsTr("重要且紧急")
-                        quadrantColor: root.dangerColor
+                        quadrantColor: root.errorColor
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
-                    
+
                     // 第二象限 - 重要不紧急
                     QuadrantPanel {
                         quadrantNumber: 2
                         quadrantTitle: qsTr("重要不紧急")
-                        quadrantColor: root.warningColor
+                        quadrantColor: root.primaryColor
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
-                    
+
                     // 第三象限 - 不重要紧急
                     QuadrantPanel {
                         quadrantNumber: 3
                         quadrantTitle: qsTr("不重要但紧急")
-                        quadrantColor: root.accentColor
+                        quadrantColor: root.secondaryColor
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
-                    
+
                     // 第四象限 - 不重要不紧急
                     QuadrantPanel {
                         quadrantNumber: 4
                         quadrantTitle: qsTr("不重要不紧急")
-                        quadrantColor: root.textLightColor
+                        quadrantColor: root.tertiaryColor
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
