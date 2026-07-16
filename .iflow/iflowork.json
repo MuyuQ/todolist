@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "todolist",
+    "createdAt": 1772102003617,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "E:\\git_repositories\\todolist"
+  ]
+}
