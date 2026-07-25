@@ -44,7 +44,9 @@ def row_to_task(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
         "title": str(row["title"]) if row["title"] is not None else "",
-        "description": str(row["description"]) if row["description"] is not None else "",
+        "description": (
+            str(row["description"]) if row["description"] is not None else ""
+        ),
         "quadrant": row["quadrant"],
         "isCompleted": bool(row["is_completed"]),
         "createdAt": row["created_at"],
@@ -65,14 +67,23 @@ app.add_middleware(
 
 
 if os.path.isdir(os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui")):
-    app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui"), html=True), name="webui")
+    app.mount(
+        "/",
+        StaticFiles(
+            directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui"),
+            html=True,
+        ),
+        name="webui",
+    )
 
 
 @app.get("/api/tasks")
 def get_tasks():
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM tasks WHERE is_completed = 0 ORDER BY quadrant ASC, order_index ASC, created_at DESC")
+        cur.execute(
+            "SELECT * FROM tasks WHERE is_completed = 0 ORDER BY quadrant ASC, order_index ASC, created_at DESC"
+        )
         rows = cur.fetchall()
         return [row_to_task(r) for r in rows]
 
@@ -81,7 +92,9 @@ def get_tasks():
 def get_completed_tasks():
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM tasks WHERE is_completed = 1 ORDER BY created_at DESC")
+        cur.execute(
+            "SELECT * FROM tasks WHERE is_completed = 1 ORDER BY created_at DESC"
+        )
         rows = cur.fetchall()
         return [row_to_task(r) for r in rows]
 
@@ -123,7 +136,9 @@ def update_task(task_id: int, payload: TaskUpdate):
 def move_task(task_id: int, payload: TaskQuadrant):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("UPDATE tasks SET quadrant = ? WHERE id = ?", (payload.quadrant, task_id))
+        cur.execute(
+            "UPDATE tasks SET quadrant = ? WHERE id = ?", (payload.quadrant, task_id)
+        )
         conn.commit()
         cur.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
         row = cur.fetchone()
@@ -136,7 +151,10 @@ def move_task(task_id: int, payload: TaskQuadrant):
 def complete_task(task_id: int, payload: TaskComplete):
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("UPDATE tasks SET is_completed = ? WHERE id = ?", (1 if payload.completed else 0, task_id))
+        cur.execute(
+            "UPDATE tasks SET is_completed = ? WHERE id = ?",
+            (1 if payload.completed else 0, task_id),
+        )
         conn.commit()
         cur.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
         row = cur.fetchone()
