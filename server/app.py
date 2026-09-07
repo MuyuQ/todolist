@@ -8,21 +8,25 @@ from pydantic import BaseModel, Field
 
 
 class TaskCreate(BaseModel):
+    """TaskCreate 功能说明。"""
     title: str = Field(min_length=1)
     description: str = ""
     quadrant: int = 4
 
 
 class TaskUpdate(BaseModel):
+    """TaskUpdate 功能说明。"""
     title: str | None = None
     description: str | None = None
 
 
 class TaskQuadrant(BaseModel):
+    """TaskQuadrant 功能说明。"""
     quadrant: int = Field(ge=1, le=4)
 
 
 class TaskComplete(BaseModel):
+    """TaskComplete 功能说明。"""
     completed: bool = True
 
 
@@ -32,6 +36,7 @@ DB_PATH = os.path.join(DATA_DIR, "tasks.db")
 
 @contextmanager
 def get_conn():
+    """get_conn 功能说明。"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
@@ -41,6 +46,7 @@ def get_conn():
 
 
 def row_to_task(row: sqlite3.Row) -> dict:
+    """row_to_task 功能说明。"""
     return {
         "id": row["id"],
         "title": str(row["title"]) if row["title"] is not None else "",
@@ -79,6 +85,7 @@ if os.path.isdir(os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui
 
 @app.get("/api/tasks")
 def get_tasks():
+    """get_tasks 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -90,6 +97,7 @@ def get_tasks():
 
 @app.get("/api/tasks/completed")
 def get_completed_tasks():
+    """get_completed_tasks 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -101,6 +109,7 @@ def get_completed_tasks():
 
 @app.post("/api/tasks")
 def create_task(payload: TaskCreate):
+    """create_task 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -116,6 +125,7 @@ def create_task(payload: TaskCreate):
 
 @app.patch("/api/tasks/{task_id}")
 def update_task(task_id: int, payload: TaskUpdate):
+    """update_task 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
@@ -134,6 +144,7 @@ def update_task(task_id: int, payload: TaskUpdate):
 
 @app.patch("/api/tasks/{task_id}/quadrant")
 def move_task(task_id: int, payload: TaskQuadrant):
+    """move_task 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -149,6 +160,7 @@ def move_task(task_id: int, payload: TaskQuadrant):
 
 @app.patch("/api/tasks/{task_id}/complete")
 def complete_task(task_id: int, payload: TaskComplete):
+    """complete_task 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -165,6 +177,7 @@ def complete_task(task_id: int, payload: TaskComplete):
 
 @app.delete("/api/tasks/{task_id}")
 def delete_task(task_id: int):
+    """delete_task 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
@@ -174,6 +187,7 @@ def delete_task(task_id: int):
 
 @app.delete("/api/tasks/completed")
 def clear_completed():
+    """clear_completed 功能说明。"""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute("DELETE FROM tasks WHERE is_completed = 1")

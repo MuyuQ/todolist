@@ -14,6 +14,7 @@ from contextlib import contextmanager
 
 
 class Task:
+    """Task 功能说明。"""
     def __init__(
         self,
         id=None,
@@ -34,6 +35,7 @@ class Task:
 
 
 class TaskModel(QAbstractListModel):
+    """TaskModel 功能说明。"""
     # 定义角色
     IdRole = Qt.UserRole + 1
     TitleRole = Qt.UserRole + 2

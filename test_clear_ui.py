@@ -15,6 +15,7 @@ from controllers.task_controller_optimized import TaskController
 
 
 def test_clear_functionality():
+    """test_clear_functionality 功能说明。"""
     print("🔍 测试清空功能...")
 
     # 创建模型和控制器
@@ -74,6 +75,7 @@ def test_clear_functionality():
 
 
 def main():
+    """main 功能说明。"""
     print("=" * 60)
     print("🧪 清空功能测试")
     print("=" * 60)

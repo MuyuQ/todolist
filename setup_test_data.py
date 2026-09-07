@@ -14,6 +14,7 @@ from controllers.task_controller_optimized import TaskController
 
 
 def main():
+    """main 功能说明。"""
     print("🧪 设置测试数据...")
 
     # 创建模型和控制器

@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 
 class TaskController(QObject):
+    """TaskController 功能说明。"""
     # 信号
     taskUpdated = Signal()
 
