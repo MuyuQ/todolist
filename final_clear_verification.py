@@ -17,6 +17,7 @@ from controllers.task_controller_optimized import TaskController
 
 
 def simulate_full_clear_flow():
+    """simulate_full_clear_flow 功能说明。"""
     print("🔄 模拟完整清空流程...")
 
     # 创建模型和控制器
@@ -125,6 +126,7 @@ def simulate_full_clear_flow():
 
 
 def main():
+    """main 功能说明。"""
     print("=" * 80)
     print("🧪 最终清空功能验证")
     print("=" * 80)
