@@ -15,6 +15,7 @@ from controllers.task_controller_optimized import TaskController
 
 
 def test_delete_functionality():
+    """test_delete_functionality 功能说明。"""
     print("🗑️  测试删除按钮功能...")
 
     # 创建模型和控制器
@@ -100,6 +101,7 @@ def test_delete_functionality():
 
 
 def main():
+    """main 功能说明。"""
     print("=" * 80)
     print("🧪 删除按钮功能测试")
     print("=" * 80)

@@ -17,6 +17,7 @@ from PySide6.QtQuickControls2 import QQuickStyle
 
 # 创建一个日志处理类，用于处理QML中的console.log输出
 class ConsoleLogger(QObject):
+    """ConsoleLogger 功能说明。"""
     @Slot(str)
     def log(self, message):
         print(str(message))
@@ -24,10 +25,12 @@ class ConsoleLogger(QObject):
 
 # 简单的Web服务器类
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """ThreadedHTTPServer 功能说明。"""
     pass
 
 
 class AppHTTPRequestHandler(BaseHTTPRequestHandler):
+    """AppHTTPRequestHandler 功能说明。"""
     def _json(self, data, code=200):
         body = json.dumps(data, ensure_ascii=False).encode()
         self.send_response(code)
@@ -210,6 +213,7 @@ from controllers.task_controller_optimized import TaskController
 
 
 def start_web_server():
+    """start_web_server 功能说明。"""
     try:
         port = 8080
         server = ThreadedHTTPServer(("localhost", port), AppHTTPRequestHandler)
@@ -220,6 +224,7 @@ def start_web_server():
 
 
 def main():
+    """main 功能说明。"""
     # 设置系统编码为UTF-8
     locale.setlocale(locale.LC_ALL, "")
 
