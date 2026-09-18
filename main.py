@@ -1,3 +1,5 @@
+from controllers.task_controller_optimized import TaskController
+from models.task_model_optimized import TaskModel
 import sys
 import os
 import locale
@@ -62,7 +64,8 @@ class AppHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/":
-            index_path = os.path.join(os.path.dirname(__file__), "webui", "index.html")
+            index_path = os.path.join(os.path.dirname(
+                __file__), "webui", "index.html")
             if os.path.exists(index_path):
                 with open(index_path, "rb") as f:
                     content = f.read()
@@ -132,7 +135,8 @@ class AppHTTPRequestHandler(BaseHTTPRequestHandler):
             conn = self._db()
             cur = conn.cursor()
             cur.execute(
-                "UPDATE tasks SET quadrant = ? WHERE id = ?", (quadrant, task_id)
+                "UPDATE tasks SET quadrant = ? WHERE id = ?", (
+                    quadrant, task_id)
             )
             conn.commit()
             cur.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
@@ -211,8 +215,6 @@ class AppHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 # 导入应用程序所需的模型和控制器类
-from models.task_model_optimized import TaskModel
-from controllers.task_controller_optimized import TaskController
 
 
 def start_web_server():
@@ -294,11 +296,13 @@ def main():
 
         # 连接QML错误信号
         engine.warnings.connect(
-            lambda warnings: [print(f"QML警告: {w.toString()}") for w in warnings]
+            lambda warnings: [
+                print(f"QML警告: {w.toString()}") for w in warnings]
         )
 
         # 启动Web服务器
-        web_server_thread = threading.Thread(target=start_web_server, daemon=True)
+        web_server_thread = threading.Thread(
+            target=start_web_server, daemon=True)
         web_server_thread.start()
 
         # 等待一下确保Web服务器启动
@@ -319,7 +323,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["desktop", "web"], default="desktop")
+    parser.add_argument(
+        "--mode", choices=["desktop", "web"], default="desktop")
     args = parser.parse_args()
     if args.mode == "web":
         try:
