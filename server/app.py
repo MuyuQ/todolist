@@ -80,7 +80,8 @@ if os.path.isdir(os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui
     app.mount(
         "/",
         StaticFiles(
-            directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "webui"),
+            directory=os.path.join(os.path.dirname(
+                os.path.dirname(__file__)), "webui"),
             html=True,
         ),
         name="webui",
@@ -152,7 +153,8 @@ def move_task(task_id: int, payload: TaskQuadrant):
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            "UPDATE tasks SET quadrant = ? WHERE id = ?", (payload.quadrant, task_id)
+            "UPDATE tasks SET quadrant = ? WHERE id = ?", (
+                payload.quadrant, task_id)
         )
         conn.commit()
         cur.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))

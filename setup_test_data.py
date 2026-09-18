@@ -3,14 +3,13 @@
 设置测试数据的脚本
 """
 
+from controllers.task_controller_optimized import TaskController
+from models.task_model_optimized import TaskModel
 import sys
 import os
 
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(__file__))
-
-from models.task_model_optimized import TaskModel
-from controllers.task_controller_optimized import TaskController
 
 
 def main():
