@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class TaskCreate(BaseModel):
     """TaskCreate 功能说明。"""
+
     title: str = Field(min_length=1)
     description: str = ""
     quadrant: int = 4
@@ -16,17 +17,20 @@ class TaskCreate(BaseModel):
 
 class TaskUpdate(BaseModel):
     """TaskUpdate 功能说明。"""
+
     title: str | None = None
     description: str | None = None
 
 
 class TaskQuadrant(BaseModel):
     """TaskQuadrant 功能说明。"""
+
     quadrant: int = Field(ge=1, le=4)
 
 
 class TaskComplete(BaseModel):
     """TaskComplete 功能说明。"""
+
     completed: bool = True
 
 
