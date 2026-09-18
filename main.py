@@ -18,6 +18,7 @@ from PySide6.QtQuickControls2 import QQuickStyle
 # 创建一个日志处理类，用于处理QML中的console.log输出
 class ConsoleLogger(QObject):
     """ConsoleLogger 功能说明。"""
+
     @Slot(str)
     def log(self, message):
         print(str(message))
@@ -26,11 +27,13 @@ class ConsoleLogger(QObject):
 # 简单的Web服务器类
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """ThreadedHTTPServer 功能说明。"""
+
     pass
 
 
 class AppHTTPRequestHandler(BaseHTTPRequestHandler):
     """AppHTTPRequestHandler 功能说明。"""
+
     def _json(self, data, code=200):
         body = json.dumps(data, ensure_ascii=False).encode()
         self.send_response(code)
