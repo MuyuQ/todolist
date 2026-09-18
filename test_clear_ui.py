@@ -3,15 +3,14 @@
 测试清空功能的脚本
 """
 
+from controllers.task_controller_optimized import TaskController
+from models.task_model_optimized import TaskModel
 import sys
 import os
 import time
 
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(__file__))
-
-from models.task_model_optimized import TaskModel
-from controllers.task_controller_optimized import TaskController
 
 
 def test_clear_functionality():
@@ -53,7 +52,8 @@ def test_clear_functionality():
     cursor.execute("SELECT COUNT(*) FROM tasks WHERE is_completed = 1")
     db_completed_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT id, title, is_completed FROM tasks WHERE is_completed = 1")
+    cursor.execute(
+        "SELECT id, title, is_completed FROM tasks WHERE is_completed = 1")
     db_completed = cursor.fetchall()
 
     print(f"数据库中已完成任务数量: {db_completed_count}")
