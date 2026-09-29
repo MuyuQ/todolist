@@ -6,9 +6,6 @@
 
 import sqlite3
 import os
-import time
-import requests
-import sys
 
 
 def get_database_path():
