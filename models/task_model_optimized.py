@@ -113,8 +113,7 @@ class TaskModel(QAbstractListModel):
             # 检查是否需要添加order_index列
             cursor.execute("PRAGMA table_info(tasks)")
             columns = cursor.fetchall()
-            has_order_index = any(
-                column[1] == "order_index" for column in columns)
+            has_order_index = any(column[1] == "order_index" for column in columns)
 
             if not has_order_index:
                 cursor.execute(
@@ -326,8 +325,7 @@ class TaskModel(QAbstractListModel):
                     str(row["title"]) if row["title"] is not None else "(无标题任务)"
                 ),
                 "description": (
-                    str(row["description"]
-                        ) if row["description"] is not None else ""
+                    str(row["description"]) if row["description"] is not None else ""
                 ),
                 "quadrant": row["quadrant"],
                 "isCompleted": bool(row["is_completed"]),
@@ -364,8 +362,7 @@ class TaskModel(QAbstractListModel):
                     str(row["title"]) if row["title"] is not None else "(无标题任务)"
                 ),
                 "taskDescription": (
-                    str(row["description"]
-                        ) if row["description"] is not None else ""
+                    str(row["description"]) if row["description"] is not None else ""
                 ),
                 "taskQuadrant": row["quadrant"],
                 "isCompleted": bool(row["is_completed"]),
@@ -421,8 +418,7 @@ class TaskModel(QAbstractListModel):
                     str(row["title"]) if row["title"] is not None else "(无标题任务)"
                 ),
                 "description": (
-                    str(row["description"]
-                        ) if row["description"] is not None else ""
+                    str(row["description"]) if row["description"] is not None else ""
                 ),
                 "quadrant": row["quadrant"],
                 "isCompleted": bool(row["is_completed"]),
@@ -437,8 +433,7 @@ class TaskModel(QAbstractListModel):
     def deleteTask(self, task_id):
         """删除任务"""
         # 从数据库中删除任务
-        self._execute_query("DELETE FROM tasks WHERE id = ?",
-                            (task_id,), commit=True)
+        self._execute_query("DELETE FROM tasks WHERE id = ?", (task_id,), commit=True)
 
         # 从模型中删除任务
         for i, task in enumerate(self.tasks):
@@ -453,7 +448,6 @@ class TaskModel(QAbstractListModel):
     def clearCompletedTasks(self):
         """清空所有已完成任务"""
         # 从数据库中删除所有已完成任务
-        self._execute_query(
-            "DELETE FROM tasks WHERE is_completed = 1", commit=True)
+        self._execute_query("DELETE FROM tasks WHERE is_completed = 1", commit=True)
 
         print("所有已完成任务已清空")
