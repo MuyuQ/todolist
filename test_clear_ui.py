@@ -51,8 +51,7 @@ def test_clear_functionality():
     cursor.execute("SELECT COUNT(*) FROM tasks WHERE is_completed = 1")
     db_completed_count = cursor.fetchone()[0]
 
-    cursor.execute(
-        "SELECT id, title, is_completed FROM tasks WHERE is_completed = 1")
+    cursor.execute("SELECT id, title, is_completed FROM tasks WHERE is_completed = 1")
     db_completed = cursor.fetchall()
 
     print(f"数据库中已完成任务数量: {db_completed_count}")
