@@ -4,7 +4,6 @@
 """
 
 import sys
-import os
 import time
 import subprocess
 from pathlib import Path
