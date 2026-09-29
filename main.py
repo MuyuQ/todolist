@@ -8,7 +8,6 @@ import time
 import json
 import sqlite3
 from urllib.parse import urlparse
-from http.server import HTTPServer, SimpleHTTPRequestHandler, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
 from PySide6.QtWidgets import QApplication
