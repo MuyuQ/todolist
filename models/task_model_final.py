@@ -112,7 +112,8 @@ class TaskModel(QAbstractListModel):
             # 检查是否需要添加order_index列
             cursor.execute("PRAGMA table_info(tasks)")
             columns = cursor.fetchall()
-            has_order_index = any(column[1] == "order_index" for column in columns)
+            has_order_index = any(
+                column[1] == "order_index" for column in columns)
 
             if not has_order_index:
                 cursor.execute(
@@ -123,7 +124,8 @@ class TaskModel(QAbstractListModel):
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_completed ON tasks(is_completed)"
             )
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quadrant ON tasks(quadrant)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_quadrant ON tasks(quadrant)")
 
             conn.commit()
 
@@ -301,7 +303,8 @@ class TaskModel(QAbstractListModel):
             self._quadrant_cache[old_quadrant].remove(task_dict)
             task_dict["quadrant"] = new_quadrant
             self._quadrant_cache[new_quadrant].append(task_dict)
-            self._quadrant_cache[new_quadrant].sort(key=lambda x: x["order_index"])
+            self._quadrant_cache[new_quadrant].sort(
+                key=lambda x: x["order_index"])
 
     @Slot(int, result="QVariant")
     def getTasksByQuadrant(self, quadrant):
